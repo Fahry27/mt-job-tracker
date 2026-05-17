@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.DS_Store
+cache/
+output/2*
+output/archive_old_outputs/
+config/ai.py
+config/notifications.py

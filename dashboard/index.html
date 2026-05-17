@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MT Job Tracker · Fahry Ramadhan</title>
+    <meta name="description" content="Personal Management Trainee Job Tracker - Fahry Ramadhan">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Google+Sans+Display:wght@400;500;700&family=Google+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Global Header -->
+        <header class="global-header">
+            <div class="header-container">
+                <div class="header-left">
+                    <a href="#" class="logo" onclick="location.reload()">
+                        <span class="logo-g">G</span>
+                        <span class="logo-text">Job Store</span>
+                    </a>
+                    <nav class="main-nav">
+                        <a href="#" class="nav-item active" data-tab="apply-today">
+                            Apply Today <span class="nav-badge" id="apply-today-count">0</span>
+                        </a>
+                        <a href="#" class="nav-item" data-tab="browse">
+                            Semua <span class="nav-badge muted" id="all-count">0</span>
+                        </a>
+                        <a href="#" class="nav-item" data-tab="tracker">
+                            Pelacakan <span class="nav-badge" id="applied-count">0</span>
+                        </a>
+                        <a href="#" class="nav-item" data-tab="overview">
+                            <span class="material-icons-round">analytics</span>
+                            <span>Overview</span>
+                        </a>
+                        <a href="#" class="nav-item" data-tab="insights">
+                            <span class="material-icons-round">insights</span>
+                            <span>Insights</span>
+                        </a>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <span class="material-icons-round search-icon">search</span>
+                        <input type="text" id="search-input" placeholder="Cari posisi atau perusahaan">
+                    </div>
+                    <button class="export-btn" id="export-kanban" title="Export Kanban ke PDF">
+                        <span class="material-icons-round">picture_as_pdf</span> Export
+                    </button>
+                    <button class="theme-toggle" id="theme-toggle" title="Dark / Light Mode">
+                        <span class="material-icons-round">dark_mode</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sub Navigation (Filter Bar) -->
+        <div class="sub-header">
+            <div class="header-container">
+                <div class="sub-header-left">
+                    <h1 class="page-title" id="page-title">Lowongan Pilihan</h1>
+                </div>
+                <div class="sub-header-right">
+                    <div class="run-info">
+                        <span class="material-icons-round">history</span>
+                        <span id="run-date-sidebar">Loading...</span>
+                    </div>
+                    <select id="score-filter" class="store-select">
+                        <option value="0">Semua skor</option>
+                        <option value="85">≥ 85 (Sangat Cocok)</option>
+                        <option value="75" selected>≥ 75 (Cocok)</option>
+                        <option value="60">≥ 60 (Mungkin)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-content">
+            <!-- Hero Banner -->
+            <section class="hero-section" id="hero-banner">
+                <div class="hero-container">
+                    <h2 class="hero-title" id="hero-title">Rekomendasi Hari Ini</h2>
+                    <p class="hero-subtitle" id="summary-text">Menganalisis data terbaru...</p>
+                </div>
+            </section>
+
+            <!-- Store Grid Content -->
+            <section class="store-layout">
+                <div id="loading-state" class="center-state">
+                    <div class="g-spinner"></div>
+                    <p class="state-text">Menyiapkan etalase...</p>
+                </div>
+
+                <div id="error-state" class="center-state hidden">
+                    <span class="material-icons-round state-icon" style="color:#d93025;">error_outline</span>
+                    <h3 class="state-heading">Gagal Memuat</h3>
+                    <p class="state-text">Pastikan server lokal berjalan (<code>python3 run_dashboard.py</code>)</p>
+                </div>
+
+                <div id="empty-state" class="center-state hidden">
+                    <span class="material-icons-round state-icon">inbox</span>
+                    <h3 class="state-heading">Tidak ada yang cocok</h3>
+                    <p class="state-text">Coba turunkan kriteria filter skor Anda.</p>
+                </div>
+
+                <!-- Product Grid -->
+                <div id="jobs-container" class="product-grid hidden"></div>
+                
+                <!-- Kanban Board -->
+                <div id="kanban-board" class="kanban-container hidden">
+                    <div class="kanban-column" data-status="applied">
+                        <div class="kanban-header">Applied <span class="k-count">0</span></div>
+                        <div class="kanban-cards" ondragover="event.preventDefault()" ondrop="dropKanban(event, 'applied')"></div>
+                    </div>
+                    <div class="kanban-column" data-status="assessment">
+                        <div class="kanban-header">Assessment <span class="k-count">0</span></div>
+                        <div class="kanban-cards" ondragover="event.preventDefault()" ondrop="dropKanban(event, 'assessment')"></div>
+                    </div>
+                    <div class="kanban-column" data-status="interview">
+                        <div class="kanban-header">Interview <span class="k-count">0</span></div>
+                        <div class="kanban-cards" ondragover="event.preventDefault()" ondrop="dropKanban(event, 'interview')"></div>
+                    </div>
+                    <div class="kanban-column" data-status="result">
+                        <div class="kanban-header">Result <span class="k-count">0</span></div>
+                        <div class="kanban-cards" ondragover="event.preventDefault()" ondrop="dropKanban(event, 'result')"></div>
+                    </div>
+                </div>
+
+                <!-- Overview Content -->
+                <div id="overview-container" class="overview-grid hidden"></div>
+                
+                <!-- Insights Content -->
+                <div id="insights-container" class="hidden" style="width:100%;"></div>
+            </section>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="global-footer">
+            <p>MT Job Tracker Engine • Fahry Ramadhan</p>
+        </footer>
+    </div>
+
+    <!-- Cover Letter Modal -->
+    <div id="cover-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Draft Lamaran (AI)</h2>
+                <button class="close-modal material-icons-round" onclick="closeModal()">close</button>
+            </div>
+            <div class="modal-body">
+                <div id="cover-loading" class="center-state">
+                    <div class="g-spinner"></div>
+                    <p class="state-text">AI sedang merangkai kata terbaik untuk Anda...</p>
+                </div>
+                <textarea id="cover-text" class="hidden" readonly></textarea>
+            </div>
+            <div class="modal-footer hidden" id="cover-footer">
+                <button id="copy-cover" class="apply-btn applied" style="width:auto; padding:8px 24px;">Salin Teks</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

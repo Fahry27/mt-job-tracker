@@ -1,0 +1,34 @@
+[2026-05-16 08:14:43] ============================================================
+[2026-05-16 08:14:43]   MT JOB SCRAPER & MATCHER v4.0 - Mode: POWERFUL_FULL_RUN
+[2026-05-16 08:14:43]   Unified Mode: False
+[2026-05-16 08:14:43]   Run ID: 20260516_081443
+[2026-05-16 08:14:43]   Output Folder: output/2026-05-16_08-14-43
+[2026-05-16 08:14:43] ============================================================
+
+[2026-05-16 08:14:44] >>> Discovering: Disnakerja - Management Trainee
+[2026-05-16 08:14:58] >>> Discovering: Disnakerja - Management Trainee Page 2
+[2026-05-16 08:15:09] >>> Discovering: Disnakerja - MT Blog
+[2026-05-16 08:15:22] >>> Discovering: Disnakerja - Jobs
+[2026-05-16 08:15:33] >>> Discovering: LokerBumn - Management Trainee
+[2026-05-16 08:15:46] >>> Discovering: LokerBumn - Officer Development Program
+[2026-05-16 08:15:59] >>> Discovering: LokerBumn - Fresh Graduate
+[2026-05-16 08:16:11] >>> Discovering: Gokerja - Management Trainee
+[2026-05-16 08:16:26] >>> Discovering: Gokerja - Fresh Graduate
+[2026-05-16 08:16:37] >>> Discovering: Gokerja - Homepage
+[2026-05-16 08:16:51] >>> Discovering: Bukajobs - Management Trainee
+[2026-05-16 08:16:56] >>> Discovering: Bukajobs - Loker S1
+[2026-05-16 08:17:09] >>> Discovering: Prosple Indonesia
+[2026-05-16 08:17:12] >>> Discovering: Prosple Indonesia - Search Jobs
+[2026-05-16 08:17:15] >>> Discovering: JobStreet - Management Trainee
+[2026-05-16 08:17:18] >>> Discovering: JobStreet - Fresh Graduate Management Trainee
+[2026-05-16 08:17:21] >>> Discovering: Indeed Indonesia - Fresh Graduate MT
+[2026-05-16 08:17:28] >>> Discovering: Loker.id - Management Trainee
+[2026-05-16 08:17:31] >>> Discovering: Jooble Indonesia - Management Trainee
+[2026-05-16 08:17:35] 
+[DETAIL MODE] Scrapping details for 278 new links...
+[2026-05-16 08:23:22] Merged Total: 261
+[2026-05-16 08:23:22] Duplicates Removed: 82
+[2026-05-16 08:23:22] Unique Jobs to Rank: 179
+[2026-05-16 08:23:22] Re-scoring all combined jobs...
+[2026-05-16 08:23:22] Running deadline audit on all jobs...
+[2026-05-16 08:23:22] Exporting results to output/2026-05-16_08-14-43...

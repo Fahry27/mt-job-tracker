@@ -1,0 +1,82 @@
+SCORING_WEIGHTS = {
+    "role_fit": 20,
+    "experience_match": 20,
+    "skill_match": 20,
+    "industry_match": 10,
+    "leadership_fit": 10,
+    "education_fit": 10,
+    "location_fit": 5,
+    "compensation_fit": 5
+}
+
+PENALTIES = {
+    "exp_3_plus": -15,
+    "exp_5_plus": -30,
+    "senior_manager": -30,
+    "advanced_tech_skills": -15,
+    "commission_only": -25,
+    "no_basic_salary": -20,
+    "unpaid_internship": -30,
+    "low_salary": -15,
+    "unclear_company": -15,
+    "vague_description": -10,
+    "irrelevant_industry": -30,
+    "high_gpa": -15,
+    "unrelated_major": -20,
+    # GPA tiered penalties
+    "gpa_slight_gap": -5,
+    "gpa_moderate_gap": -15,
+    "gpa_high_gap": -25,
+    "gpa_qualitative": -3,
+}
+
+REASON_CODES = [
+    "MT_ODP_MATCH",
+    "FRESH_GRAD_ACCEPTED",
+    "OPS_SUPPLY_CHAIN_MATCH",
+    "FMCG_MATCH",
+    "LOGISTICS_MATCH",
+    "WAREHOUSE_MATCH",
+    "PROCUREMENT_MATCH",
+    "COMMERCIAL_MATCH",
+    "NATIONWIDE_PLACEMENT",
+    "GPA_RISK",
+    "GPA_MEETS",
+    "GPA_RISK_SLIGHT",
+    "GPA_RISK_MODERATE",
+    "GPA_RISK_HIGH",
+    "GPA_NOT_LISTED",
+    "GPA_QUALITATIVE",
+    "MAJOR_RISK",
+    "EXPERIENCE_TOO_HIGH",
+    "SALARY_MISSING",
+    "SALARY_BELOW_TARGET",
+    "UNCLEAR_COMPANY",
+    "VAGUE_JD",
+    "COMMISSION_ONLY",
+    "UNPAID_INTERNSHIP"
+]
+
+JOB_FIELDS = [
+    "Rank",
+    "Score",
+    "Match Category",
+    "Recommendation",
+    "Job Title",
+    "Company",
+    "Location",
+    "Source",
+    "Link",
+    "Why Match",
+    "Gaps / Concerns",
+    "Suggested CV Tailoring",
+    "reason_codes",
+    "data_confidence",
+    "scrape_status",
+    "run_id",
+    "gpa_required",
+    "gpa_gap",
+    "gpa_status",
+    "gpa_note",
+    "salary_ai_extracted"
+]
