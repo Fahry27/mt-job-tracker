@@ -86,6 +86,8 @@ def process_command(text, chat_id):
                 send_message(chat_id, f"❌ Terjadi kesalahan saat scraping:\n{process.stderr[-200:]}")
         except Exception as e:
             send_message(chat_id, f"❌ Gagal menjalankan skrip: {e}")
+    elif cmd == '/brief':
+        check_morning_brief(force=True)
             
     elif cmd == '/help' or cmd == '/start':
         help_text = (
@@ -94,6 +96,7 @@ def process_command(text, chat_id):
             "/ping - Cek status bot\n"
             "/stats - Lihat statistik lamaran Anda\n"
             "/run - Jalankan scraper saat ini juga\n"
+            "/brief - Dapatkan Top 3 Lowongan hari ini\n"
             "/help - Tampilkan pesan ini"
         )
         send_message(chat_id, help_text)
@@ -127,10 +130,10 @@ def check_reminders():
     except:
         pass
 
-def check_morning_brief():
-    """Check if it's 8:00 AM and send daily top 3 jobs if not sent yet today."""
+def check_morning_brief(force=False):
+    """Check if it's 8:00 AM and send daily top 3 jobs if not sent yet today, or if forced."""
     now = time.localtime()
-    if now.tm_hour == 8:
+    if force or now.tm_hour == 8:
         today_str = time.strftime("%Y-%m-%d")
         state_file = os.path.join(DIRECTORY, "data", "brief_state.json")
         last_sent = ""
@@ -142,7 +145,7 @@ def check_morning_brief():
             except:
                 pass
                 
-        if last_sent != today_str:
+        if force or last_sent != today_str:
             # We need to send the brief!
             apply_today_path = os.path.join(DIRECTORY, "output", "latest", "apply_today.csv")
             if os.path.exists(apply_today_path):
