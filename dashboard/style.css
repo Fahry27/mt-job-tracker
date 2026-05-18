@@ -656,13 +656,15 @@ body::before {
 
 /* =================== KANBAN BOARD =================== */
 .kanban-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
     gap: 24px;
-    align-items: start;
+    align-items: stretch;
+    width: 100%;
 }
 
 .kanban-column {
+    flex: 1;
+    min-width: 250px;
     display: flex;
     flex-direction: column;
     background: rgba(255, 255, 255, 0.50);
@@ -673,6 +675,9 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.65);
     min-height: 600px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.80);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 [data-theme="dark"] .kanban-column {
@@ -1351,17 +1356,30 @@ body::before {
 }
 
 /* =================== KANBAN COLLAPSE & PLACEHOLDERS =================== */
-.kanban-column {
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-}
-
 .kanban-column.collapsed {
+    flex: 0 0 72px !important;
     min-width: 72px !important;
     max-width: 72px !important;
     width: 72px !important;
-    padding: 20px 8px !important;
+    padding: 24px 8px !important;
+    background: rgba(255, 255, 255, 0.20) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    cursor: pointer;
+}
+
+[data-theme="dark"] .kanban-column.collapsed {
+    background: rgba(20, 20, 35, 0.35) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.kanban-column.collapsed:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .kanban-column.collapsed:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 .kanban-column.collapsed .kanban-cards {
@@ -1369,28 +1387,59 @@ body::before {
 }
 
 .kanban-column.collapsed .kanban-header {
+    display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     gap: 16px;
     height: 100%;
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
-    align-items: center;
 }
 
-.kanban-column.collapsed .kanban-header-text {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    margin: 24px 0;
-    font-size: 15px;
-    letter-spacing: 1px;
-    opacity: 0.8;
+.kanban-column.collapsed .k-toggle {
+    order: 1; /* Place toggle button at the very top */
+    margin-bottom: 4px;
+    transition: transform 0.2s ease;
+}
+
+.kanban-column.collapsed .k-toggle:hover {
+    transform: scale(1.15);
+    background: rgba(0,0,0,0.05) !important;
+}
+
+[data-theme="dark"] .kanban-column.collapsed .k-toggle:hover {
+    background: rgba(255,255,255,0.08) !important;
 }
 
 .kanban-column.collapsed .k-count {
-    padding: 2px 6px;
+    order: 2; /* Place count badge second */
+    padding: 2px 8px;
     font-size: 11px;
+    background: var(--store-surface);
+    border-color: var(--store-border);
+    transition: all 0.2s ease;
+}
+
+.kanban-column.collapsed .kanban-header-text {
+    order: 3; /* Place vertical title third */
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    margin: 16px 0 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--store-text);
+    opacity: 0.85;
+    transition: all 0.2s ease;
+}
+
+.kanban-column.collapsed:hover .kanban-header-text {
+    opacity: 1;
+    color: var(--store-accent);
 }
 
 /* Empty Placeholder Card Styling */

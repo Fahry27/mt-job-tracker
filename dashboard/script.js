@@ -483,12 +483,22 @@ function renderKanban() {
             btn.className = 'k-toggle';
             btn.innerHTML = '<span class="material-icons-round" style="font-size:18px;">expand_less</span>';
             btn.style.cssText = 'background:none; border:none; cursor:pointer; color:var(--store-text-muted); padding:4px; border-radius:50%; display:flex;';
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const isCollapsed = col.classList.toggle('collapsed');
                 const icon = btn.querySelector('.material-icons-round');
                 icon.textContent = isCollapsed ? 'expand_more' : 'expand_less';
             });
             header.appendChild(btn);
+
+            // Dynamic Click-to-Expand Column Feature
+            col.addEventListener('click', (e) => {
+                if (col.classList.contains('collapsed')) {
+                    col.classList.remove('collapsed');
+                    const icon = btn.querySelector('.material-icons-round');
+                    if (icon) icon.textContent = 'expand_less';
+                }
+            });
         }
 
         // Feature: elegant minimalist empty placeholder card
