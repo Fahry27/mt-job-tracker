@@ -1259,3 +1259,93 @@ body::before {
 @media (min-width: 769px) {
     .main-nav .nav-item::before { display: none; }
 }
+
+/* =================== CUSTOM DROPDOWN SELECTS =================== */
+.custom-select-wrapper {
+    position: relative;
+    user-select: none;
+}
+
+.custom-select-trigger {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-full);
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--store-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+}
+
+.custom-select-trigger:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+.custom-select-options {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 210px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+    pointer-events: none;
+    z-index: 200;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+    max-height: 320px;
+    padding: 6px;
+}
+
+[data-theme="dark"] .custom-select-options {
+    background: rgba(25, 25, 45, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.custom-select-wrapper.open .custom-select-options {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.custom-option {
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--store-text);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.15s ease;
+}
+
+.custom-option:hover {
+    background: rgba(0, 100, 255, 0.08);
+    color: var(--store-accent);
+}
+
+[data-theme="dark"] .custom-option:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+.custom-option.selected {
+    background: var(--store-accent);
+    color: #fff;
+}

@@ -279,6 +279,7 @@ function initUI() {
     if(el('apply-today-count')) el('apply-today-count').textContent = applyTodayJobs.length;
 
     populateFilters();
+    initCustomDropdowns();
     renderTab();
     updateAppliedBadge();
 
@@ -431,10 +432,37 @@ function renderKanban() {
     
     const kanbanData = state.getKanban();
     
+    // Retrieve active filter values
+    const query = (el('search-input')?.value || '').toLowerCase().trim();
+    const minScore = parseInt(el('score-filter')?.value || '0');
+    const locationQuery = (el('location-filter') ? el('location-filter').value.toLowerCase().trim() : '');
+    const industryQuery = (el('industry-filter') ? el('industry-filter').value.toLowerCase().trim() : '');
+    
     Object.keys(kanbanData).forEach(id => {
         const status = kanbanData[id];
         const job = allJobs.find(j => j._id === id || j._id_alt === id) || (serverState.historical_jobs && serverState.historical_jobs[id]);
         if (job) {
+            // 1. Search Query Filter
+            if (query) {
+                const titleMatch = (job['Job Title'] || '').toLowerCase().includes(query);
+                const companyMatch = (job.Company || '').toLowerCase().includes(query);
+                const locMatch = (job.Location || '').toLowerCase().includes(query);
+                if (!titleMatch && !companyMatch && !locMatch) return;
+            }
+            // 2. Score Filter
+            if (minScore > 0) {
+                const score = parseFloat(job.Score || job._score || 0);
+                if (score < minScore) return;
+            }
+            // 3. Location Filter
+            if (locationQuery) {
+                if (!(job.Location || '').toLowerCase().includes(locationQuery)) return;
+            }
+            // 4. Industry Filter
+            if (industryQuery) {
+                if (!(job['Why Match'] || '').toLowerCase().includes(industryQuery)) return;
+            }
+
             const card = buildCard(job, 0, true);
             const col = document.querySelector(`.kanban-column[data-status="${status}"] .kanban-cards`);
             if (col) col.appendChild(card);
@@ -1193,3 +1221,96 @@ el('compare-btn').addEventListener('click', () => {
 window.closeCompareModal = function() {
     hide('compare-modal');
 };
+
+function initCustomDropdowns() {
+    // Remove any existing custom select wrappers to prevent duplicate renders
+    document.querySelectorAll('.custom-select-wrapper').forEach(w => w.remove());
+
+    const selects = document.querySelectorAll('.store-select');
+    selects.forEach(select => {
+        // Hide the original native select
+        select.style.display = 'none';
+
+        // Create wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        
+        // Trigger button
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        
+        const textSpan = document.createElement('span');
+        const selectedOpt = select.options[select.selectedIndex];
+        textSpan.textContent = selectedOpt ? selectedOpt.textContent : select.placeholder || '';
+        
+        const arrow = document.createElement('span');
+        arrow.className = 'material-icons-round';
+        arrow.style.fontSize = '18px';
+        arrow.style.transition = 'transform 0.2s';
+        arrow.textContent = 'expand_more';
+        
+        trigger.appendChild(textSpan);
+        trigger.appendChild(arrow);
+        wrapper.appendChild(trigger);
+        
+        // Options container
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'custom-select-options';
+        
+        Array.from(select.options).forEach(opt => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'custom-option';
+            if (opt.selected) optionDiv.classList.add('selected');
+            optionDiv.textContent = opt.textContent;
+            
+            optionDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Remove selected class from all options
+                optionsContainer.querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+                optionDiv.classList.add('selected');
+                
+                // Update selected text and trigger change event on native select
+                textSpan.textContent = opt.textContent;
+                select.value = opt.value;
+                select.dispatchEvent(new Event('change'));
+                
+                // Close dropdown
+                wrapper.classList.remove('open');
+                arrow.style.transform = 'rotate(0deg)';
+            });
+            
+            optionsContainer.appendChild(optionDiv);
+        });
+        
+        wrapper.appendChild(optionsContainer);
+        
+        // Toggle on trigger click
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close other custom dropdowns
+            document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+                if (w !== wrapper) {
+                    w.classList.remove('open');
+                    const otherArrow = w.querySelector('.material-icons-round');
+                    if (otherArrow) otherArrow.style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            const isOpen = wrapper.classList.contains('open');
+            wrapper.classList.toggle('open');
+            arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+        
+        // Insert wrapper right after native select
+        select.parentNode.insertBefore(wrapper, select.nextSibling);
+    });
+}
+
+// Close dropdown on click outside
+document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select-wrapper').forEach(w => {
+        w.classList.remove('open');
+        const arrow = w.querySelector('.material-icons-round');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    });
+});
