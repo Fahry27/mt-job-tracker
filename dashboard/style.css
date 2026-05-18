@@ -367,12 +367,42 @@ body::before {
     align-items: center;
     gap: 6px;
     color: var(--store-text-muted);
-    font-size: 13px;
+    font-size: 11px;
+    font-weight: 500;
     margin-right: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .run-info {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .run-info .material-icons-round {
-    font-size: 16px;
+    font-size: 14px;
+    color: var(--store-green) !important;
+    animation: pulse-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+    0% {
+        opacity: 0.6;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 0.6;
+        transform: scale(0.9);
+    }
 }
 
 /* =================== HERO BANNER =================== */

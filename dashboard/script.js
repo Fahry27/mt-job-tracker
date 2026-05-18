@@ -251,7 +251,7 @@ function initUI() {
     hide('loading-state');
     const d = new Date(summaryData.finished_at || Date.now());
     const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    if(el('run-date-sidebar')) el('run-date-sidebar').textContent = dateStr;
+    if(el('run-date-sidebar')) el('run-date-sidebar').textContent = 'Pembaruan: ' + dateStr;
 
     const applyTodayJobs = allJobs.filter(isApplyToday);
     if(el('all-count')) el('all-count').textContent = allJobs.length;
@@ -404,7 +404,7 @@ function renderKanban() {
     });
     
     document.querySelectorAll('.kanban-column').forEach(col => {
-        const count = col.querySelectorAll('.job-card').length;
+        const count = col.querySelectorAll('.k-card').length;
         if(col.querySelector('.k-count')) col.querySelector('.k-count').textContent = count;
         
         // Add collapse toggle if not already present
