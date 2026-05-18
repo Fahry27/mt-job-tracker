@@ -145,6 +145,8 @@ function setupTheme() {
         else document.documentElement.removeAttribute('data-theme');
         localStorage.setItem('mt_theme', next);
         updateThemeIcon(next);
+        // Redraw charts to match new theme colours
+        if (typeof drawCharts === 'function') drawCharts();
     });
 }
 

@@ -19,7 +19,7 @@ async def parse_with_llm(text):
     try:
         genai.configure(api_key=api_key)
         # Using flash model for fast and cheap extraction
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         prompt = f"""
         Extract the following job details from the text below. 
