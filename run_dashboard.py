@@ -38,17 +38,118 @@ except ImportError:
     GEMINI_API_KEY = ""
     CANDIDATE_PROFILE = {}
 
+import re
+import glob
+import csv
+
+_historical_jobs_cache = {}
+_cached_kanban_keys = set()
+
+def slugify(s):
+    if not s:
+        return ""
+    s = s.lower()
+    s = re.sub(r'[^a-z0-9]', '', s)
+    return s[:80]
+
+def build_historical_jobs_cache(state_kanban_keys):
+    historical_jobs = {}
+    if not state_kanban_keys:
+        return historical_jobs
+        
+    keys_set = set(state_kanban_keys)
+    output_dir = os.path.join(DIRECTORY, "output")
+    if not os.path.exists(output_dir):
+        return historical_jobs
+        
+    csv_paths = glob.glob(os.path.join(output_dir, "**", "*.csv"), recursive=True)
+    
+    for path in csv_paths:
+        if len(keys_set) == 0:
+            break
+        try:
+            with open(path, mode='r', encoding='utf-8-sig', errors='ignore') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    company = row.get("Company", "")
+                    title = row.get("Job Title", "") or row.get("job_title", "")
+                    location = row.get("Location", "")
+                    
+                    if not company and not title:
+                        continue
+                        
+                    slug1 = slugify(company + title + location)
+                    slug2 = slugify(title + company + location)
+                    
+                    match_key = None
+                    if slug1 in keys_set:
+                        match_key = slug1
+                    elif slug2 in keys_set:
+                        match_key = slug2
+                        
+                    if match_key:
+                        historical_jobs[match_key] = {
+                            "Company": company,
+                            "Job Title": title,
+                            "Location": location,
+                            "Url": row.get("Url", "") or row.get("job_url", "") or row.get("Link", ""),
+                            "Score": float(row.get("Score", 0) or row.get("match_score", 0) or 0),
+                            "Why Match": row.get("Why Match", "") or row.get("recommendation_insight", ""),
+                            "_score": float(row.get("Score", 0) or row.get("match_score", 0) or 0),
+                            "_id": match_key
+                        }
+                        keys_set.remove(match_key)
+        except Exception as e:
+            pass
+            
+    # Add generic placeholders for keys still not found in historical CSVs
+    for rem_key in keys_set:
+        historical_jobs[rem_key] = {
+            "Company": "Histori Pekerjaan",
+            "Job Title": "Pekerjaan Terlacak (" + rem_key[:12] + ")",
+            "Location": "Tidak tercantum",
+            "Url": "",
+            "Score": 0,
+            "Why Match": "Detail pekerjaan ini diarsipkan secara lokal.",
+            "_score": 0,
+            "_id": rem_key
+        }
+            
+    return historical_jobs
+
+def get_historical_jobs(kanban_keys):
+    global _historical_jobs_cache, _cached_kanban_keys
+    current_keys = set(kanban_keys)
+    if current_keys == _cached_kanban_keys:
+        return _historical_jobs_cache
+    _historical_jobs_cache = build_historical_jobs_cache(kanban_keys)
+    _cached_kanban_keys = current_keys
+    return _historical_jobs_cache
+
 def get_state():
     if not os.path.exists(STATE_FILE):
-        return {"kanban": {}, "hidden": {}, "apply_dates": {}}
+        return {"kanban": {}, "hidden": {}, "apply_dates": {}, "historical_jobs": {}}
     try:
         with open(STATE_FILE, "r") as f:
             data = json.load(f)
             if "apply_dates" not in data:
                 data["apply_dates"] = {}
+            
+            existing_historical = data.get("historical_jobs", {})
+            kanban_keys = list(data.get("kanban", {}).keys())
+            
+            # Rebuild historical jobs cache dynamically
+            fresh_historical = get_historical_jobs(kanban_keys)
+            
+            # Merge with existing file records for items not found in CSVs
+            for k in kanban_keys:
+                if k not in fresh_historical and k in existing_historical:
+                    fresh_historical[k] = existing_historical[k]
+                    
+            data["historical_jobs"] = fresh_historical
             return data
-    except:
-        return {"kanban": {}, "hidden": {}, "apply_dates": {}}
+    except Exception as e:
+        return {"kanban": {}, "hidden": {}, "apply_dates": {}, "historical_jobs": {}}
 
 def save_state(data):
     with open(STATE_FILE, "w") as f:

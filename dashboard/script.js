@@ -99,7 +99,26 @@ const state = {
         if (status) {
             k[id] = status;
             this.addTimelineEvent(id, status);
-        } else { delete k[id]; }
+            if (!serverState.historical_jobs) serverState.historical_jobs = {};
+            if (!serverState.historical_jobs[id]) {
+                const job = allJobs.find(j => j._id === id || j._id_alt === id);
+                if (job) {
+                    serverState.historical_jobs[id] = {
+                        Company: job.Company,
+                        'Job Title': job['Job Title'],
+                        Location: job.Location,
+                        URL: job.URL || '#',
+                        Score: job.Score || job._score || 0,
+                        'Why Match': job['Why Match'] || '',
+                        _score: job.Score || job._score || 0,
+                        _id: id
+                    };
+                }
+            }
+        } else { 
+            delete k[id]; 
+            if (serverState.historical_jobs) delete serverState.historical_jobs[id];
+        }
         this.setKanban(k);
     },
     toggle(id) {
@@ -231,6 +250,7 @@ async function fetchData() {
             complete(results) {
                 allJobs = results.data.map(j => ({
                     ...j,
+                    URL: j.Link || j.URL || j.job_url || '#',
                     _score: parseFloat(j.Score || j['match_score'] || 0),
                     _isApplyToday: !j['not_apply_today_reason'] || j['not_apply_today_reason'].trim() === '',
                     _id: slugify((j.Company || '') + (j['Job Title'] || '') + (j.Location || '')),
@@ -395,7 +415,7 @@ function renderKanban() {
     
     Object.keys(kanbanData).forEach(id => {
         const status = kanbanData[id];
-        const job = allJobs.find(j => j._id === id || j._id_alt === id);
+        const job = allJobs.find(j => j._id === id || j._id_alt === id) || (serverState.historical_jobs && serverState.historical_jobs[id]);
         if (job) {
             const card = buildCard(job, 0, true);
             const col = document.querySelector(`.kanban-column[data-status="${status}"] .kanban-cards`);
