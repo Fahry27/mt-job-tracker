@@ -755,6 +755,7 @@ body {
     .job-card { padding: 20px 16px; }
     .company-avatar { width: 56px; height: 56px; font-size: 20px; margin-bottom: 16px; }
     .card-title { font-size: 17px; }
+    .hide-btn { opacity: 0.5; }
 
     .overview-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .stat-card { padding: 20px; }
