@@ -475,8 +475,9 @@ window.dropKanban = function(event, status) {
         state.setStatus(id, status);
         // If moved to interview, prompt for reminder
         if (status === 'interview') {
-            const job = allJobs.find(j => j._id === id);
-            const dt = prompt(`Kapan jadwal interview ${job ? job.Company : ''}?\n(Format: 2026-05-20 09:00)`);
+            const job = allJobs.find(j => j._id === id || j._id_alt === id) || (serverState.historical_jobs && serverState.historical_jobs[id]);
+            const companyName = job ? job.Company : 'Pekerjaan Terlacak';
+            const dt = prompt(`Kapan jadwal interview ${companyName}?\n(Format: 2026-05-20 09:00)`);
             if (dt) state.setReminder(id, dt);
         }
         renderKanban();
