@@ -121,7 +121,12 @@ body::before {
     border-bottom: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 1px 0 rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
     z-index: 100;
-    transition: all 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.global-header.header-hidden {
+    transform: translateY(-100%);
+    box-shadow: none;
 }
 
 [data-theme="dark"] .global-header {

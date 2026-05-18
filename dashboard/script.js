@@ -12,7 +12,7 @@ let currentTab = 'apply-today';
 let currentCoverJob = null; 
 let insightsData = null; 
 
-let serverState = { kanban: {}, hidden: {}, notes: {} };
+let serverState = { kanban: {}, hidden: {}, notes: {}, historical_jobs: {} };
 
 const state = {
     getKanban() { return serverState.kanban || {}; },
@@ -218,6 +218,7 @@ async function fetchStateAndData() {
             serverState.hidden = data.hidden || {};
             serverState.apply_dates = data.apply_dates || {};
             serverState.notes = data.notes || {};
+            serverState.historical_jobs = data.historical_jobs || {};
             state.migrateFromLocal();
         }
     } catch (e) {
@@ -280,6 +281,23 @@ function initUI() {
     populateFilters();
     renderTab();
     updateAppliedBadge();
+
+    // Auto-hide header on scroll down, show on scroll up
+    let lastScrollY = window.scrollY;
+    const header = document.querySelector('.global-header');
+    if (header) {
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            if (Math.abs(currentScrollY - lastScrollY) < 10) return;
+            
+            if (currentScrollY > lastScrollY && currentScrollY > 80) {
+                header.classList.add('header-hidden');
+            } else {
+                header.classList.remove('header-hidden');
+            }
+            lastScrollY = currentScrollY;
+        }, { passive: true });
+    }
 }
 
 function populateFilters() {
