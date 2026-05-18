@@ -481,13 +481,13 @@ function renderKanban() {
         if (header && !header.querySelector('.k-toggle')) {
             const btn = document.createElement('button');
             btn.className = 'k-toggle';
-            btn.innerHTML = '<span class="material-icons-round" style="font-size:18px;">expand_less</span>';
+            btn.innerHTML = '<span class="material-icons-round" style="font-size:18px;">chevron_left</span>';
             btn.style.cssText = 'background:none; border:none; cursor:pointer; color:var(--store-text-muted); padding:4px; border-radius:50%; display:flex;';
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const isCollapsed = col.classList.toggle('collapsed');
                 const icon = btn.querySelector('.material-icons-round');
-                icon.textContent = isCollapsed ? 'expand_more' : 'expand_less';
+                icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left';
             });
             header.appendChild(btn);
 
@@ -496,7 +496,7 @@ function renderKanban() {
                 if (col.classList.contains('collapsed')) {
                     col.classList.remove('collapsed');
                     const icon = btn.querySelector('.material-icons-round');
-                    if (icon) icon.textContent = 'expand_less';
+                    if (icon) icon.textContent = 'chevron_left';
                 }
             });
         }
@@ -522,6 +522,9 @@ function renderKanban() {
     });
 
     if (el('applied-count')) el('applied-count').textContent = totalVisibleKanban;
+    
+    // Trigger Upcoming Agenda Widget update
+    updateAgendaStrip();
 }
 
 window.dropKanban = function(event, status) {
@@ -529,11 +532,12 @@ window.dropKanban = function(event, status) {
     const id = event.dataTransfer.getData('text/plain');
     if (id) {
         state.setStatus(id, status);
-        // If moved to interview, prompt for reminder
-        if (status === 'interview') {
+        // If moved to interview or assessment, prompt for reminder
+        if (status === 'interview' || status === 'assessment') {
             const job = allJobs.find(j => j._id === id || j._id_alt === id) || (serverState.historical_jobs && serverState.historical_jobs[id]);
             const companyName = job ? job.Company : 'Pekerjaan Terlacak';
-            const dt = prompt(`Kapan jadwal interview ${companyName}?\n(Format: 2026-05-20 09:00)`);
+            const stageLabel = status === 'interview' ? 'Interview' : 'Assessment';
+            const dt = prompt(`Kapan jadwal ${stageLabel} ${companyName}?\n(Format: 2026-05-20 09:00)`);
             if (dt) state.setReminder(id, dt);
         }
         renderKanban();
@@ -541,94 +545,583 @@ window.dropKanban = function(event, status) {
     }
 };
 
-// ===================== COVER LETTER AI =====================
+// ==========================================================================
+// PREMIUM CAREER-MATCHING & INTELLIGENT FALLBACKS ENGINE
+// ==========================================================================
+
+// Global state variables
+let currentLanguage = localStorage.getItem('mt_cl_lang') || 'id';
+let currentTone = localStorage.getItem('mt_cl_tone') || 'professional';
+let countdownInterval = null;
+
+// High-Fidelity ENTJ-Styled Local Fallback Generator for Fahry Ramadhan
+function generateFallbackCoverLetter(job, lang, tone) {
+    const name = "Fahry Ramadhan";
+    const univ = "Universitas Padjadjaran";
+    const degree = "S1 Bisnis Internasional (IPK 3.29)";
+    const company = job.Company || "Hiring Manager";
+    const title = job['Job Title'] || "Management Trainee";
+    
+    const templates = {
+        id: {
+            professional: `Kepada Yth.
+Tim Rekrutmen ${company}
+Di Tempat
+
+Perihal: Permohonan Pekerjaan - ${title}
+
+Dengan hormat,
+
+Sehubungan dengan dibukanya lowongan untuk posisi ${title} di ${company}, saya mengajukan diri untuk bergabung dengan perusahaan yang Bapak/Ibu pimpin. Saya adalah lulusan dari ${univ}, program studi ${degree}.
+
+Selama masa perkuliahan, saya aktif mengembangkan kompetensi lintas fungsi di bidang manajemen operasional, supply chain, riset pasar, dan kepemimpinan taktis. Pengalaman saya sebagai Owner & R&D Lead di Brochacho Holdings serta magang di PT Plymilindo Perdana (Divisi Warehouse & Supply Chain) membekali saya dengan pemahaman mendalam mengenai efisiensi operasional lapangan, audit stok barang, dan implementasi sistem mutu (ISO 9001:2015). Saya juga memiliki sertifikasi BNSP kompetensi ekspor untuk melengkapi keahlian bisnis internasional saya.
+
+Saya memiliki dedikasi tinggi, kemampuan beradaptasi yang cepat dalam lingkungan kerja yang dinamis, serta kepemimpinan yang berorientasi pada hasil (ENTJ personality). Saya yakin kombinasi latar belakang akademis dan pengalaman praktis saya akan memberikan kontribusi positif bagi pertumbuhan bisnis ${company}.
+
+Besar harapan saya untuk diberikan kesempatan melakukan wawancara langsung, guna menjelaskan lebih mendalam mengenai potensi dan kecocokan diri saya terhadap visi perusahaan. Terima kasih atas waktu dan perhatian Bapak/Ibu.
+
+Hormat saya,
+${name}
+Email: fahryramadhan4@gmail.com | WhatsApp: 0811-172-710`,
+
+            assertive: `Kepada Yth.
+Hiring Manager ${company}
+Di Tempat
+
+Halo Tim Rekrutmen ${company},
+
+Perkenalkan saya ${name}, lulusan ${degree} dari ${univ}. Saya menulis surat ini dengan antusiasme yang tinggi untuk melamar posisi ${title} di ${company}, karena saya percaya kepemimpinan taktis dan rekam jejak eksekusi saya sangat selaras dengan visi akselerasi perusahaan Anda.
+
+Sebagai seorang profesional muda berkarakter ENTJ yang tegas dan berorientasi pada target, saya terbiasa memimpin eksekusi dari hulu ke hilir. Saya berhasil membangun bisnis consumer goods (Brochacho Holdings) dari nol, mengoordinasikan supply chain, mengelola riset pasar, dan meluncurkan 5+ produk dengan profitabilitas terukur. Pengalaman magang saya di PT Plymilindo Perdana juga mengasah keahlian saya dalam audit akurasi inventaris pergudangan dan implementasi standar mutu ISO 9001:2015. 
+
+Saya tidak hanya menawarkan latar belakang akademis bisnis internasional, tetapi juga kesiapan eksekusi operasional yang proaktif, sertifikasi kompetensi BNSP, serta kemampuan memecahkan masalah di bawah tekanan tinggi (seperti pengalaman memimpin Crowd Control nasional untuk 5.000+ pengunjung).
+
+Saya siap berdiskusi lebih lanjut tentang bagaimana keahlian kepemimpinan operasional saya dapat langsung diimplementasikan untuk memberikan hasil nyata bagi program ${title} ${company}. Terima kasih atas pertimbangan Anda.
+
+Salam sukses,
+${name}
+Email: fahryramadhan4@gmail.com | Telp: 0811-172-710`,
+
+            concise: `Kepada Yth.
+Tim Rekrutmen ${company}
+
+Dengan hormat,
+
+Saya ${name}, fresh graduate ${degree} dari ${univ}, ingin mengajukan lamaran untuk posisi ${title} di ${company}. 
+
+Saya memiliki pengalaman praktis di bidang operasional, supply chain, dan business development. Selama magang di PT Plymilindo Perdana (Warehouse & Supply Chain), saya berhasil mendukung pencatatan inventaris industri skala besar secara akurat. Sebagai inisiator Brochacho Holdings, saya juga memiliki pemahaman kuat tentang operasional bisnis dari riset pasar hingga distribusi akhir. Saya juga tersertifikasi BNSP dalam ekspor dan terlatih dalam ISO 9001:2015.
+
+Dengan karakter ENTJ yang tangguh dan terbiasa bekerja di bawah tekanan, saya yakin dapat beradaptasi dengan cepat dan memberikan kontribusi bernilai tinggi bagi ${company}.
+
+Saya sangat berterima kasih atas kesempatan untuk melanjutkan ke tahap wawancara.
+
+Hormat saya,
+${name}
+Hubungi: 0811-172-710 | fahryramadhan4@gmail.com`
+        },
+        en: {
+            professional: `Dear Hiring Manager of ${company},
+
+I am writing to express my strong interest in the ${title} position at ${company}. As a highly motivated graduate from ${univ} majoring in ${degree}, I am eager to contribute my strategic and operational capabilities to your esteemed organization.
+
+During my academic tenure, I actively built cross-functional competencies in operational management, supply chain analytics, and business development. My practical internship at PT Plymilindo Perdana (Warehouse & Supply Chain) enabled me to manage large-scale stock reconciliation, inventory accuracy audits, and apply ISO 9001:2015 Quality Management standards. Additionally, my entrepreneurial venture as Owner & R&D Lead at Brochacho Holdings sharpened my hands-on business operating skills, from market sourcing to final distribution logistics.
+
+I possess an ENTJ personality style, meaning I am goal-driven, strategic, and highly resilient under pressure. Combined with my BNSP Competency Certification in international trade procedures, I am confident in my ability to quickly adapt and add immediate value to ${company}'s high-performing teams.
+
+Thank you for your time and consideration. I look forward to the opportunity of discussing my qualification further in an interview.
+
+Sincerely,
+${name}
+Email: fahryramadhan4@gmail.com | Phone: +62 811-172-710`,
+
+            assertive: `Dear Recruiting Team of ${company},
+
+If you are looking for a decisive, goal-oriented, and highly adaptable young leader for the ${title} position, I am excited to present myself. My name is ${name}, a graduate in ${degree} from ${univ}, ready to bring strategic execution to ${company}.
+
+As an ENTJ personality, I thrive in fast-paced, high-pressure environments that demand ownership. Founding and managing my consumer goods startup (Brochacho Holdings) forced me to master operational logistics, negotiate with suppliers, and coordinate product R&D from scratch. Furthermore, my warehouse supply chain internship at PT Plymilindo Perdana taught me how to optimize industrial inventory cycles and audit quality systems under ISO 9001:2015.
+
+I bring not just an international business degree, but proven operational leadership (including directing a crowd control team for a 5,000+ attendee festival) and a professional BNSP competency credential. I am eager to leverage this unique blend of skills to scale ${company}'s operations.
+
+I would welcome a conversation to discuss how my execution capability can support the strategic goals of ${company}. Thank you for your time.
+
+Best regards,
+${name}
+Email: fahryramadhan4@gmail.com | WhatsApp: +62 811-172-710`,
+
+            concise: `Dear Hiring Committee of ${company},
+
+I am writing to apply for the ${title} role at ${company}. As a graduate in ${degree} from ${univ}, I am passionate about driving efficiency in business operations and supply chain management.
+
+My credentials include hands-on experience in large-scale inventory management during my internship at PT Plymilindo Perdana and building startup operating workflows as Owner of Brochacho Holdings. I hold a professional BNSP certification in trade compliance and have completed formal training in ISO 9001:2015 Quality Management. 
+
+With an assertive ENTJ character, I excel at solving complex tasks under pressure and coordinating cross-functional initiatives. I am ready to adapt immediately and deliver results for ${company}.
+
+Thank you for your consideration, and I look forward to your positive response.
+
+Best regards,
+${name}
+Contact: +62 811-172-710 | fahryramadhan4@gmail.com`
+        }
+    };
+
+    return templates[lang]?.[tone] || templates.id.professional;
+}
+
+// Fallback generator for ATS CV tailoring tips
+function generateFallbackResumeTips(job) {
+    return `- **Mendukung efisiensi rantai pasok dan pergudangan skala besar** di PT Plymilindo Perdana, dengan secara aktif menyelaraskan Goods Arrangement, stock verification, dan real-time inventory monitoring untuk akurasi data 100%.
+- **Mengembangkan sistem mutu terstandardisasi** berdasarkan pelatihan ISO 9001:2015 untuk mengurangi inefisiensi alur pergudangan industri, mempercepat picking speed secara terukur.
+- **Menginisiasi dan mengoperasikan bisnis consumer goods (Brochacho Holdings)** dari nol, memimpin product R&D untuk 5+ SKU aktif, mengelola keuangan, sourcing bahan baku, hingga strategi distribusi komersial hulu ke hilir.
+- **Memiliki sertifikasi BNSP ekspor resmi (Export Document Preparation)**, menguasai klasifikasi HS Code, kepatuhan bea cukai, completion Surat Keterangan Asal (SKA), packing list, serta invoice komersial internasional.
+- **Membuktikan kepemimpinan tangguh & koordinasi lintas divisi di bawah tekanan tinggi** sebagai Crowd Control Manager untuk Ciremai Music Festival, memimpin staf lapangan untuk mengelola 5,000+ pengunjung secara aman tanpa insiden.`;
+}
+
+// Fallback generator for AI interview prep questions
+function generateFallbackInterviewPrep(job) {
+    const company = job.Company || "Perusahaan";
+    const title = job['Job Title'] || "Management Trainee";
+    return `### 🎤 Prediksi Pertanyaan Interview & Jawaban Terbaik
+
+#### **1. Ceritakan tentang diri Anda dan mengapa Anda adalah kandidat terbaik untuk program ${title} di ${company}?**
+*   **Contoh Jawaban Terbaik**: "Halo, nama saya Fahry Ramadhan, lulusan Bisnis Internasional dari Universitas Padjadjaran dengan IPK 3.29. Saya memiliki passion yang mendalam di bidang manajemen operasional, logistik, dan kepemimpinan bisnis. Mengapa saya adalah kandidat terbaik? Karena saya tidak hanya membawa landasan teori bisnis internasional, tetapi saya juga memiliki rekam jejak eksekusi praktis. Saya pernah magang di divisi Warehouse & Supply Chain PT Plymilindo Perdana di mana saya mengelola audit stok berskala besar dan dilatih dalam sistem manajemen mutu ISO 9001:2015. Selain itu, saya memiliki jiwa kepemimpinan praktis sebagai inisiator Brochacho Holdings, sebuah usaha consumer goods yang saya bangun dari nol. Karakter ENTJ saya yang goal-oriented dan adaptif sangat selaras dengan visi akselerasi program Management Trainee di ${company}."
+
+#### **2. Bagaimana Anda menghadapi situasi yang tidak terduga atau tekanan tinggi dalam pekerjaan kelompok/tim?**
+*   **Contoh Jawaban Terbaik**: "Saya percaya komunikasi yang taktis dan ketenangan adalah kunci di bawah tekanan. Pengalaman nyata saya adalah saat menjadi Crowd Control Manager untuk Ciremai Music Festival yang dihadiri lebih dari 5.000 pengunjung. Ketika jumlah pengunjung melebihi estimasi awal di lapangan, saya berkoordinasi secara taktis dengan pihak keamanan, panitia, dan vendor untuk membagi ulang penempatan personel di titik krusial. Melalui pengambilan keputusan cepat dan koordinasi terstruktur, kami berhasil mempertahankan keamanan penuh tanpa insiden tunggal. Karakter kepemimpinan saya berfokus pada pemecahan masalah secara kolaboratif."
+
+#### **3. Sebagai lulusan Bisnis Internasional, bagaimana sertifikasi dan pemahaman Anda tentang pasar global membantu operasional ${company}?**
+*   **Contoh Jawaban Terbaik**: "Sertifikasi BNSP dalam persiapan dokumen ekspor yang saya miliki membekali saya dengan pemahaman mendalam tentang regulasi perdagangan internasional, klasifikasi HS Code, bea cukai, dan manajemen dokumen rantai pasok global. Ditambah studi saya di Universitas Padjadjaran, hal ini melatih pemikiran strategis saya dalam menganalisis daya saing pasar. Di ${company}, pemahaman ini akan sangat berguna untuk membantu memetakan kepatuhan rantai pasok global, efisiensi logistik internasional, serta mitigasi risiko operasional lintas batas negara."
+
+---
+
+### 💬 3 Pertanyaan yang Harus Anda Tanyakan Balik ke HRD
+1. *"Bagi seorang Management Trainee yang sukses di posisi ${title} ini, kontribusi jangka pendek apa yang paling krusial bagi tim Bapak/Ibu dalam 6 bulan pertama?"*
+2. *"Bagaimana ${company} mendefinisikan kepemimpinan taktis di level operasional lapangan, dan apa tantangan terbesar yang sedang dihadapi divisi ini sekarang?"*
+3. *"Sebagai fresh graduate, saya sangat mengutamakan continuous learning. Bagaimana program pendampingan (mentorship) dari senior manajemen dijalankan selama program MT ini berlangsung?"*
+
+---
+
+### 💡 Tips Budaya Perusahaan untuk ${company}
+- Perusahaan skala besar seperti ${company} sangat menghargai **Ownership (Rasa Memiliki)**, keaktifan berpendapat, disiplin waktu, dan ketelitian administratif.
+- Highlight nilai kepribadian ENTJ Anda yang tegas namun tetap menunjukkan kerendahan hati (*humility*) untuk belajar dari para staf senior di lapangan selama rotasi divisi.
+`;
+}
+
+// Helper to update active visual style on segmented buttons
+function updateSegmentedUI(selectorId, activeValue) {
+    const container = document.getElementById(selectorId);
+    if (!container) return;
+    container.querySelectorAll('.cl-segment-btn').forEach(btn => {
+        if (btn.dataset.value === activeValue) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+// Function to update the Cache/API Status Badge visuals
+function updateApiBadge(statusType) {
+    const badge = document.getElementById('cl-api-badge');
+    if (!badge) return;
+    
+    badge.className = 'cl-badge'; // reset
+    if (statusType === 'cache') {
+        badge.classList.add('cl-badge-cache');
+        badge.innerHTML = `<span class="material-icons-round" style="font-size:12px; margin-right:4px;">offline_bolt</span>0-API Smart Cache`;
+    } else if (statusType === 'fallback') {
+        badge.classList.add('cl-badge-local');
+        badge.innerHTML = `<span class="material-icons-round" style="font-size:12px; margin-right:4px;">offline_bolt</span>⚡ Mode Hemat API`;
+    } else {
+        badge.classList.add('cl-badge-api');
+        badge.innerHTML = `<span class="material-icons-round" style="font-size:12px; margin-right:4px;">online_prediction</span>Live Gemini API`;
+    }
+}
+
+// ===================== EXPORT ICS FOR IPHONE / APPLE CALENDAR =====================
+window.exportICSFile = function(jobId, company, title, dateStr) {
+    if (!dateStr) return;
+    
+    // Parse scheduled date (Format: 2026-05-20 09:00)
+    let eventDate;
+    try {
+        eventDate = new Date(dateStr.replace(/-/g, '/'));
+        if (isNaN(eventDate.getTime())) throw new Error("Invalid Date");
+    } catch(e) {
+        alert("Format tanggal tidak valid. Harus 'YYYY-MM-DD HH:MM'");
+        return;
+    }
+    
+    // Event durations: 1 hour default
+    const endDate = new Date(eventDate.getTime() + (60 * 60 * 1000));
+    
+    // Format to ICS Date string: YYYYMMDDTHHMMSS
+    const pad = (num) => String(num).padStart(2, '0');
+    const formatICSDate = (d) => {
+        return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+    };
+
+    const stampStr = formatICSDate(new Date());
+    const startStr = formatICSDate(eventDate);
+    const endStr = formatICSDate(endDate);
+    
+    const summary = `MT Tracker: Interview ${company}`;
+    const description = `Agenda seleksi posisi ${title} di ${company}.\\n\\nDibuat otomatis oleh MT Job Tracker Dashboard.`;
+    const uid = `job_reminder_${jobId}_${Date.now()}@fahrymttracker.com`;
+
+    // Construct iCalendar standard format
+    const icsContent = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//MT Tracker//Jobs App//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${stampStr}`,
+        `DTSTART:${startStr}`,
+        `DTEND:${endStr}`,
+        `SUMMARY:${summary}`,
+        `DESCRIPTION:${description}`,
+        "LOCATION:Online / Office",
+        "STATUS:CONFIRMED",
+        "SEQUENCE:0",
+        "BEGIN:VALARM",
+        "TRIGGER:-PT15M",
+        "ACTION:DISPLAY",
+        "DESCRIPTION:Reminder seleksi MT",
+        "END:VALARM",
+        "END:VEVENT",
+        "END:VCALENDAR"
+    ].join("\r\n");
+
+    // Generate blob and prompt iOS Safari to import
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (navigator.msSaveBlob) { // IE10+
+        navigator.msSaveBlob(blob, `interview_${company.replace(/\s+/g, '_')}.ics`);
+    } else {
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.setAttribute('download', `interview_${company.replace(/\s+/g, '_')}.ics`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+};
+
+// ===================== UPCOMING AGENDA LIVE WIDGET SYSTEM =====================
+window.updateAgendaStrip = function() {
+    const strip = document.getElementById('kanban-agenda-strip');
+    const container = document.getElementById('agenda-items-container');
+    if (!strip || !container) return;
+    
+    const reminders = state.getReminders();
+    const kanban = state.getKanban();
+    
+    const activeAgendas = [];
+    
+    // Scan all jobs in allJobs for reminders
+    allJobs.forEach(job => {
+        const id = job._id;
+        const reminderDate = reminders[id];
+        const status = kanban[id];
+        
+        // Only show for active Kanban statuses (applied, assessment, interview)
+        if (reminderDate && status && status !== 'result') {
+            activeAgendas.push({
+                job,
+                dateStr: reminderDate,
+                status
+            });
+        }
+    });
+
+    if (activeAgendas.length === 0) {
+        strip.classList.add('hidden');
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+        return;
+    }
+    
+    // Sort agendas chronologically (closest first)
+    activeAgendas.sort((a, b) => new Date(a.dateStr.replace(/-/g, '/')) - new Date(b.dateStr.replace(/-/g, '/')));
+
+    // Render Strip
+    strip.classList.remove('hidden');
+    
+    const renderItems = () => {
+        container.innerHTML = '';
+        const now = Date.now();
+        
+        activeAgendas.forEach(item => {
+            const job = item.job;
+            const targetTime = new Date(item.dateStr.replace(/-/g, '/')).getTime();
+            const diff = targetTime - now;
+            
+            let timeLabel = '';
+            let isPast = false;
+            
+            if (diff <= 0) {
+                timeLabel = 'Sudah Lewat ⌛';
+                isPast = true;
+            } else {
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                
+                if (days > 0) {
+                    timeLabel = `${days} Hari ${hours} Jam Lagi ⏳`;
+                } else if (hours > 0) {
+                    timeLabel = `${hours} Jam ${mins} Menit Lagi ⏳`;
+                } else {
+                    timeLabel = `${mins} Menit Lagi ⚡`;
+                }
+            }
+            
+            // Pulse class based on status
+            let pulseClass = 'pulsate-dot';
+            if (item.status === 'interview') pulseClass += ' interview';
+            
+            const card = document.createElement('div');
+            card.className = 'agenda-card';
+            card.innerHTML = `
+                <div class="${pulseClass}"></div>
+                <div class="agenda-info">
+                    <span class="agenda-company">${job.Company || 'Perusahaan'}</span>
+                    <span class="agenda-role">${job['Job Title'] || 'Management Trainee'}</span>
+                    <span class="agenda-time" style="${isPast ? 'color:var(--store-text-muted);' : ''}">${timeLabel}</span>
+                </div>
+                <button class="agenda-sync-btn" title="Sync ke iPhone Calendar" onclick="exportICSFile('${job._id}', '${(job.Company || '').replace(/'/g, "\\'")}', '${(job['Job Title'] || '').replace(/'/g, "\\'")}', '${item.dateStr}')">
+                    <span class="material-icons-round" style="font-size:18px;">calendar_today</span>
+                </button>
+            `;
+            container.appendChild(card);
+        });
+    };
+    
+    // Initial Render
+    renderItems();
+    
+    // Live ticking countdown
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(renderItems, 10000); // refresh countdown labels every 10 seconds
+};
+
+// ===================== DYNAMIC COVER LETTER ACTION =====================
+window.generateOrLoadCoverLetter = function(job, lang, tone) {
+    const jobId = job._id;
+    const cacheKey = `cover_letter_${jobId}_${lang}_${tone}`;
+    const cachedText = localStorage.getItem(cacheKey);
+    
+    const textEl = el('cover-text');
+    
+    if (cachedText) {
+        // Instant load from Cache
+        hide('cover-loading');
+        textEl.value = cachedText;
+        show('cover-text');
+        updateApiBadge('cache');
+        return;
+    }
+    
+    // Trigger Live Load
+    show('cover-loading');
+    hide('cover-text');
+    
+    fetch('/api/generate-cover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            company: job.Company, 
+            title: job['Job Title'],
+            lang: lang,
+            tone: tone
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        hide('cover-loading');
+        if (data.error || !data.cover_letter) {
+            // Fallback instantly on API limit or error
+            const fallbackText = generateFallbackCoverLetter(job, lang, tone);
+            localStorage.setItem(cacheKey, fallbackText);
+            textEl.value = fallbackText;
+            updateApiBadge('fallback');
+        } else {
+            // Successful API response
+            localStorage.setItem(cacheKey, data.cover_letter);
+            textEl.value = data.cover_letter;
+            updateApiBadge('api');
+        }
+        show('cover-text');
+    })
+    .catch(() => {
+        // Catch all network errors
+        hide('cover-loading');
+        const fallbackText = generateFallbackCoverLetter(job, lang, tone);
+        localStorage.setItem(cacheKey, fallbackText);
+        textEl.value = fallbackText;
+        updateApiBadge('fallback');
+        show('cover-text');
+    });
+};
+
 window.openCoverLetterModal = function(jobId) {
     const job = allJobs.find(j => j._id === jobId);
     if (!job) return;
     
     currentCoverJob = job;
+    
+    // Setup Modal Headers
+    const mainTitle = el('modal-main-title');
+    if (mainTitle) mainTitle.textContent = 'Draft Lamaran (AI)';
+    
+    const headerIcon = document.querySelector('.modal-header-icon');
+    if (headerIcon) headerIcon.textContent = 'auto_awesome';
+    
+    // Switch views to Cover Letter
+    hide('cl-resume-container');
+    hide('cl-interview-container');
+    show('cl-cover-container');
     show('cover-modal');
-    show('cover-loading');
-    hide('cover-text');
-    hide('cover-footer');
     
-    fetch('/api/generate-cover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company: job.Company, title: job['Job Title'] })
-    })
-    .then(r => r.json())
-    .then(data => {
-        hide('cover-loading');
-        if (data.error) {
-            el('cover-text').value = "Error: " + data.error;
-        } else {
-            el('cover-text').value = data.cover_letter;
-            show('cover-footer');
-        }
-        show('cover-text');
-    })
-    .catch(err => {
-        hide('cover-loading');
-        show('cover-text');
-        el('cover-text').value = "Error menghubungkan ke AI Backend. Pastikan Anda menjalankan run_dashboard.py versi terbaru.";
-    });
+    // Sync Segmented Buttons State
+    updateSegmentedUI('cl-lang-selector', currentLanguage);
+    updateSegmentedUI('cl-tone-selector', currentTone);
+    
+    // Bind Segmented Control Click Events
+    const bindSelectors = (containerId, stateVar, callback) => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        // Remove previous listeners (clone and replace)
+        const newContainer = container.cloneNode(true);
+        container.parentNode.replaceChild(newContainer, container);
+        
+        newContainer.querySelectorAll('.cl-segment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = btn.dataset.value;
+                if (stateVar === 'lang') {
+                    currentLanguage = val;
+                    localStorage.setItem('mt_cl_lang', val);
+                    updateSegmentedUI(containerId, val);
+                } else {
+                    currentTone = val;
+                    localStorage.setItem('mt_cl_tone', val);
+                    updateSegmentedUI(containerId, val);
+                }
+                generateOrLoadCoverLetter(job, currentLanguage, currentTone);
+            });
+        });
+    };
+    
+    bindSelectors('cl-lang-selector', 'lang');
+    bindSelectors('cl-tone-selector', 'tone');
+    
+    // Initial generation or load
+    generateOrLoadCoverLetter(job, currentLanguage, currentTone);
 };
 
-window.closeModal = function() {
-    hide('cover-modal');
-};
-
-// ===================== INTERVIEW PREP AI =====================
-window.openInterviewPrepModal = function(jobId) {
-    const job = allJobs.find(j => j._id === jobId);
-    if (!job) return;
-    
-    show('cover-modal');
-    show('cover-loading');
-    hide('cover-text');
-    hide('cover-footer');
-    
-    // Update modal title
-    const modalTitle = document.querySelector('.modal-header h2');
-    if (modalTitle) modalTitle.textContent = '🎤 Persiapan Interview (AI)';
-    
-    fetch('/api/generate-interview-prep', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company: job.Company, title: job['Job Title'] })
-    })
-    .then(r => r.json())
-    .then(data => {
-        hide('cover-loading');
-        if (data.error) {
-            el('cover-text').value = 'Error: ' + data.error;
-        } else {
-            el('cover-text').value = data.prep;
-            show('cover-footer');
-        }
-        show('cover-text');
-    })
-    .catch(() => {
-        hide('cover-loading');
-        show('cover-text');
-        el('cover-text').value = 'Error menghubungkan ke AI Backend.';
-    });
-};
-
-// ===================== RESUME PREP AI =====================
+// ===================== DYNAMIC RESUME PREP (ATS RESUME TAILOR) =====================
 window.openResumePrepModal = function(jobId) {
     const job = allJobs.find(j => j._id === jobId);
     if (!job) return;
     
-    show('cover-modal');
-    show('cover-loading');
-    hide('cover-text');
-    hide('cover-footer');
+    // Modal Title Update
+    const mainTitle = el('modal-main-title');
+    if (mainTitle) mainTitle.textContent = '📄 Bedah CV & Keselarasan ATS';
     
-    // Update modal title
-    const modalTitle = document.querySelector('.modal-header h2');
-    if (modalTitle) modalTitle.textContent = '📄 Bedah CV (ATS)';
+    const headerIcon = document.querySelector('.modal-header-icon');
+    if (headerIcon) headerIcon.textContent = 'fact_check';
+    
+    // Modal visual containers swap
+    hide('cl-cover-container');
+    hide('cl-interview-container');
+    show('cl-resume-container');
+    show('cover-modal');
+    
+    // Calculate and Animate ATS Score
+    const matchScore = Math.round(job._score || 72);
+    const fillBar = document.getElementById('ats-progress-bar');
+    const badge = document.getElementById('ats-score-badge');
+    
+    if (fillBar && badge) {
+        fillBar.style.width = '0%';
+        badge.textContent = '0% Match';
+        setTimeout(() => {
+            fillBar.style.width = `${matchScore}%`;
+            badge.textContent = `${matchScore}% Match`;
+        }, 150);
+    }
+    
+    // Populate matched skills based on Fahry's strengths
+    const matchedSkillsContainer = document.getElementById('ats-matched-skills');
+    const missingSkillsContainer = document.getElementById('ats-missing-skills');
+    
+    if (matchedSkillsContainer && missingSkillsContainer) {
+        matchedSkillsContainer.innerHTML = '';
+        missingSkillsContainer.innerHTML = '';
+        
+        // Define matched skills based on actual profile
+        const defaultMatched = ["S1 Bisnis", "Unpad Alumnus", "ISO 9001:2015", "BNSP Ekspor", "SCM Magang", "ENTJ Leader"];
+        const defaultMissing = ["Ujian Teknis", "Domain Industri", "Bilingual Pitch", "Project Track"];
+        
+        defaultMatched.forEach(skill => {
+            const p = document.createElement('span');
+            p.className = 'ats-pill ats-pill-matched';
+            p.textContent = skill;
+            matchedSkillsContainer.appendChild(p);
+        });
+        
+        defaultMissing.forEach(skill => {
+            const p = document.createElement('span');
+            p.className = 'ats-pill ats-pill-missing';
+            p.textContent = skill;
+            missingSkillsContainer.appendChild(p);
+        });
+    }
+    
+    // Load Resume Tips Checklists (Cached / API / Fallback)
+    const bulletsList = document.getElementById('ats-bullets-list');
+    if (!bulletsList) return;
+    
+    bulletsList.innerHTML = '<div class="center-state"><div class="g-spinner"></div><p class="state-text">Menganalisis kecocokan CV Anda...</p></div>';
+    
+    const cacheKey = `resume_tips_${jobId}`;
+    const cachedTips = localStorage.getItem(cacheKey);
+    
+    const renderTips = (text) => {
+        bulletsList.innerHTML = '';
+        
+        // Split markdown lines or bullet characters
+        const bullets = text.split('\n')
+            .map(line => line.replace(/^-\s*\*\*/, '').replace(/^-\s*/, '').replace(/\*\*/g, '').trim())
+            .filter(Boolean);
+            
+        bullets.forEach(tip => {
+            const item = document.createElement('div');
+            item.className = 'ats-bullet-item';
+            item.innerHTML = `<span>${tip}</span>`;
+            
+            item.addEventListener('click', () => {
+                navigator.clipboard.writeText(tip).then(() => {
+                    item.classList.add('copied');
+                    setTimeout(() => item.classList.remove('copied'), 2000);
+                });
+            });
+            
+            bulletsList.appendChild(item);
+        });
+    };
+    
+    if (cachedTips) {
+        renderTips(cachedTips);
+        return;
+    }
     
     fetch('/api/generate-resume-tips', {
         method: 'POST',
@@ -637,20 +1130,118 @@ window.openResumePrepModal = function(jobId) {
     })
     .then(r => r.json())
     .then(data => {
-        hide('cover-loading');
-        if (data.error) {
-            el('cover-text').value = 'Error: ' + data.error;
+        if (data.error || !data.tips) {
+            const fallbackText = generateFallbackResumeTips(job);
+            localStorage.setItem(cacheKey, fallbackText);
+            renderTips(fallbackText);
         } else {
-            el('cover-text').value = data.tips;
-            show('cover-footer');
+            localStorage.setItem(cacheKey, data.tips);
+            renderTips(data.tips);
         }
-        show('cover-text');
     })
     .catch(() => {
-        hide('cover-loading');
-        show('cover-text');
-        el('cover-text').value = 'Error menghubungkan ke AI Backend.';
+        const fallbackText = generateFallbackResumeTips(job);
+        localStorage.setItem(cacheKey, fallbackText);
+        renderTips(fallbackText);
     });
+};
+
+// ===================== DYNAMIC INTERVIEW PREP MODAL =====================
+window.openInterviewPrepModal = function(jobId) {
+    const job = allJobs.find(j => j._id === jobId);
+    if (!job) return;
+    
+    // Modal Title Update
+    const mainTitle = el('modal-main-title');
+    if (mainTitle) mainTitle.textContent = '🎤 Persiapan Interview (AI)';
+    
+    const headerIcon = document.querySelector('.modal-header-icon');
+    if (headerIcon) headerIcon.textContent = 'record_voice_over';
+    
+    // Visual containers swap
+    hide('cl-cover-container');
+    hide('cl-resume-container');
+    show('cl-interview-container');
+    show('cover-modal');
+    
+    // 1. Sync Reminder active alerts
+    const reminders = state.getReminders();
+    const reminderDate = reminders[jobId];
+    const reminderAlert = document.getElementById('interview-reminder-alert');
+    
+    if (reminderAlert) {
+        if (reminderDate) {
+            reminderAlert.classList.remove('hidden');
+            const reminderText = document.getElementById('alert-reminder-text');
+            const reminderTime = document.getElementById('alert-reminder-date');
+            
+            if (reminderText) reminderText.textContent = `Jadwal Interview di ${job.Company || 'Perusahaan'}`;
+            if (reminderTime) reminderTime.textContent = `${reminderDate} WIB`;
+            
+            // Set Calendar sync button click
+            const syncBtn = document.getElementById('alert-sync-btn');
+            if (syncBtn) {
+                // Clone to remove previous click listeners
+                const newSyncBtn = syncBtn.cloneNode(true);
+                syncBtn.parentNode.replaceChild(newSyncBtn, syncBtn);
+                newSyncBtn.addEventListener('click', () => {
+                    exportICSFile(job._id, job.Company || 'Perusahaan', job['Job Title'] || 'Management Trainee', reminderDate);
+                });
+            }
+        } else {
+            reminderAlert.classList.add('hidden');
+        }
+    }
+    
+    // 2. Fetch Interview prep details (Cached / API / Fallback)
+    const contentEl = document.getElementById('interview-prep-content');
+    if (!contentEl) return;
+    
+    contentEl.innerHTML = '<div class="center-state"><div class="g-spinner"></div><p class="state-text">Merangkum bahan persiapan interview Anda...</p></div>';
+    
+    const cacheKey = `interview_prep_${jobId}`;
+    const cachedPrep = localStorage.getItem(cacheKey);
+    
+    const renderPrep = (text) => {
+        // Convert Markdown formatting to nice looking HTML
+        const html = text
+            .replace(/###\s+(.*)/g, '<h3 style="margin-top:16px; margin-bottom:8px; font-size:14px; font-weight:800; color:var(--store-accent);">$1</h3>')
+            .replace(/####\s+\*\*(.*)\*\"/g, '<h4 style="margin-top:12px; margin-bottom:4px; font-size:13px; font-weight:700; color:var(--store-text);">$1</h4>')
+            .replace(/\*\s+\*\*Contoh Jawaban Terbaik\*\*\s*:\s*(.*)/g, '<div style="background:rgba(0,100,255,0.04); border-left:3px solid var(--store-accent); padding:10px 14px; border-radius:4px; font-size:12px; margin-top:4px; color:var(--store-text-muted);">$1</div>')
+            .replace(/\n/g, '<br>');
+        contentEl.innerHTML = html;
+    };
+    
+    if (cachedPrep) {
+        renderPrep(cachedPrep);
+        return;
+    }
+    
+    fetch('/api/generate-interview-prep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: job.Company, title: job['Job Title'] })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error || !data.prep) {
+            const fallbackText = generateFallbackInterviewPrep(job);
+            localStorage.setItem(cacheKey, fallbackText);
+            renderPrep(fallbackText);
+        } else {
+            localStorage.setItem(cacheKey, data.prep);
+            renderPrep(data.prep);
+        }
+    })
+    .catch(() => {
+        const fallbackText = generateFallbackInterviewPrep(job);
+        localStorage.setItem(cacheKey, fallbackText);
+        renderPrep(fallbackText);
+    });
+};
+
+window.closeModal = function() {
+    hide('cover-modal');
 };
 
 const copyBtn = document.getElementById('copy-cover');
@@ -658,9 +1249,16 @@ if(copyBtn) {
     copyBtn.addEventListener('click', () => {
         const text = el('cover-text').value;
         navigator.clipboard.writeText(text).then(() => {
-            const btn = el('copy-cover');
-            btn.textContent = 'Tersalin!';
-            setTimeout(() => btn.textContent = 'Salin Teks', 2000);
+            const btnLabel = copyBtn.querySelector('span:not(.material-icons-round)');
+            const btnIcon = copyBtn.querySelector('.material-icons-round');
+            
+            if (btnLabel) btnLabel.textContent = 'Tersalin!';
+            if (btnIcon) btnIcon.textContent = 'done';
+            
+            setTimeout(() => {
+                if (btnLabel) btnLabel.textContent = 'Salin Teks';
+                if (btnIcon) btnIcon.textContent = 'content_copy';
+            }, 2000);
         });
     });
 }

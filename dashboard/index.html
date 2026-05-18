@@ -117,21 +117,35 @@
                 
                 <!-- Kanban Board -->
                 <div id="kanban-board" class="kanban-container hidden">
-                    <div class="kanban-column" data-status="applied">
-                        <div class="kanban-header"><span class="kanban-header-text">Applied</span> <span class="k-count">0</span></div>
-                        <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'applied')"></div>
+                    <!-- Upcoming Agenda Strip -->
+                    <div id="kanban-agenda-strip" class="agenda-strip hidden">
+                        <div class="agenda-header-section">
+                            <span class="material-icons-round agenda-icon">event_note</span>
+                            <span class="agenda-title">Jadwal Seleksi Mendatang</span>
+                        </div>
+                        <div id="agenda-items-container" class="agenda-items">
+                            <!-- Dynamically populated events with live countdowns -->
+                        </div>
                     </div>
-                    <div class="kanban-column" data-status="assessment">
-                        <div class="kanban-header"><span class="kanban-header-text">Assessment</span> <span class="k-count">0</span></div>
-                        <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'assessment')"></div>
-                    </div>
-                    <div class="kanban-column" data-status="interview">
-                        <div class="kanban-header"><span class="kanban-header-text">Interview</span> <span class="k-count">0</span></div>
-                        <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'interview')"></div>
-                    </div>
-                    <div class="kanban-column" data-status="result">
-                        <div class="kanban-header"><span class="kanban-header-text">Result</span> <span class="k-count">0</span></div>
-                        <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'result')"></div>
+
+                    <!-- Kanban Columns Board -->
+                    <div class="kanban-board-columns">
+                        <div class="kanban-column" data-status="applied" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'applied')">
+                            <div class="kanban-header"><span class="kanban-header-text">Applied</span> <span class="k-count">0</span></div>
+                            <div class="kanban-cards"></div>
+                        </div>
+                        <div class="kanban-column" data-status="assessment" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'assessment')">
+                            <div class="kanban-header"><span class="kanban-header-text">Assessment</span> <span class="k-count">0</span></div>
+                            <div class="kanban-cards"></div>
+                        </div>
+                        <div class="kanban-column" data-status="interview" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'interview')">
+                            <div class="kanban-header"><span class="kanban-header-text">Interview</span> <span class="k-count">0</span></div>
+                            <div class="kanban-cards"></div>
+                        </div>
+                        <div class="kanban-column" data-status="result" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'result')">
+                            <div class="kanban-header"><span class="kanban-header-text">Result</span> <span class="k-count">0</span></div>
+                            <div class="kanban-cards"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -149,22 +163,110 @@
         </footer>
     </div>
 
-    <!-- Cover Letter Modal -->
+    <!-- Cover Letter / AI Assistant Modal -->
     <div id="cover-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Draft Lamaran (AI)</h2>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span class="material-icons-round modal-header-icon" style="color:var(--store-accent);">auto_awesome</span>
+                    <h2 id="modal-main-title">Draft Lamaran (AI)</h2>
+                </div>
                 <button class="close-modal material-icons-round" onclick="closeModal()">close</button>
             </div>
             <div class="modal-body">
-                <div id="cover-loading" class="center-state">
+                <!-- Global Loader State -->
+                <div id="cover-loading" class="center-state hidden">
                     <div class="g-spinner"></div>
-                    <p class="state-text">AI sedang merangkai kata terbaik untuk Anda...</p>
+                    <p class="state-text" id="loader-message">AI sedang merangkai kata terbaik untuk Anda...</p>
                 </div>
-                <textarea id="cover-text" class="hidden" readonly></textarea>
-            </div>
-            <div class="modal-footer hidden" id="cover-footer">
-                <button id="copy-cover" class="apply-btn applied" style="width:auto; padding:8px 24px;">Salin Teks</button>
+
+                <!-- 1. COVER LETTER CONTAINER -->
+                <div id="cl-cover-container" class="hidden">
+                    <div class="cl-control-panel">
+                        <div class="cl-control-row">
+                            <span class="cl-control-label">Bahasa:</span>
+                            <div class="cl-segment-control" id="cl-lang-selector">
+                                <button class="cl-segment-btn active" data-value="id">Indonesia 🇮🇩</button>
+                                <button class="cl-segment-btn" data-value="en">English 🇬🇧</button>
+                            </div>
+                        </div>
+                        <div class="cl-control-row">
+                            <span class="cl-control-label">Gaya Bahasa:</span>
+                            <div class="cl-segment-control" id="cl-tone-selector">
+                                <button class="cl-segment-btn active" data-value="professional">Profesional</button>
+                                <button class="cl-segment-btn" data-value="assertive">Antusias (ENTJ)</button>
+                                <button class="cl-segment-btn" data-value="concise">Singkat</button>
+                            </div>
+                        </div>
+                        <div class="cl-status-row">
+                            <span id="cl-api-badge" class="cl-badge cl-badge-cache">
+                                <span class="material-icons-round" style="font-size:12px; margin-right:4px;">offline_bolt</span>
+                                0-API Smart Cache
+                            </span>
+                        </div>
+                    </div>
+                    <textarea id="cover-text" readonly style="width:100%; min-height:300px; padding:16px; border-radius:var(--radius-md); border:1px solid var(--store-border); background:var(--store-surface); color:var(--store-text); font-family:inherit; font-size:14px; line-height:1.6; resize:vertical; outline:none; transition:all 0.2s;"></textarea>
+                    
+                    <div class="modal-footer" style="padding-top:16px; border-top:1px solid var(--store-border); margin-top:16px; display:flex; justify-content:flex-end;">
+                        <button id="copy-cover" class="apply-btn applied" style="width:auto; padding:8px 24px; display:flex; align-items:center; gap:8px;">
+                            <span class="material-icons-round" style="font-size:18px;">content_copy</span>
+                            <span>Salin Teks</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. RESUME TAILOR (ATS) CONTAINER -->
+                <div id="cl-resume-container" class="hidden">
+                    <div class="ats-header">
+                        <div class="ats-score-section">
+                            <span class="ats-score-title">Skor Kesiapan ATS</span>
+                            <div class="ats-progress-track">
+                                <div id="ats-progress-bar" class="ats-progress-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div id="ats-score-badge" class="ats-badge">0% Match</div>
+                    </div>
+
+                    <div class="ats-skills-panel">
+                        <div class="ats-skills-column">
+                            <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #10b981; display:flex; align-items:center; gap:4px;"><span class="material-icons-round" style="font-size:16px;">check_circle</span> Kelebihan Anda</h4>
+                            <div id="ats-matched-skills" class="ats-pills">
+                                <!-- Matched Skill Pills -->
+                            </div>
+                        </div>
+                        <div class="ats-skills-column">
+                            <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #f59e0b; display:flex; align-items:center; gap:4px;"><span class="material-icons-round" style="font-size:16px;">bolt</span> Celah Kompetensi</h4>
+                            <div id="ats-missing-skills" class="ats-pills">
+                                <!-- Missing Skill Pills -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ats-bullet-section">
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: var(--store-text);">Rekomendasi Poin CV (Klik untuk Salin)</h3>
+                        <div id="ats-bullets-list" class="ats-bullets">
+                            <!-- Click-to-copy bullet items -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. INTERVIEW PREP CONTAINER -->
+                <div id="cl-interview-container" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
+                    <!-- Quick Reminder Alert inside Interview modal if any reminder is set -->
+                    <div id="interview-reminder-alert" class="interview-reminder-alert hidden">
+                        <span class="material-icons-round alert-icon">notifications_active</span>
+                        <div class="alert-info">
+                            <span class="alert-title" id="alert-reminder-text">Jadwal Interview Terdaftar</span>
+                            <span class="alert-date" id="alert-reminder-date">2026-05-20 09:00</span>
+                        </div>
+                        <button id="alert-sync-btn" class="agenda-sync-btn" style="color:white;"><span class="material-icons-round">calendar_today</span></button>
+                    </div>
+
+                    <div class="interview-prep-body">
+                        <!-- Questions accordion or scroll lists -->
+                        <div id="interview-prep-content" style="color:var(--store-text); font-size:14px; line-height:1.6; max-height:480px; overflow-y:auto; padding-right:8px;"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -232,10 +232,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(b'{"error": "GEMINI_API_KEY belum dikonfigurasi di config/ai.py"}')
                 return
 
+            lang = job_data.get('lang', 'id')
+            tone = job_data.get('tone', 'professional')
+            
+            lang_instruction = "Gunakan bahasa Inggris penuh (English)." if lang == 'en' else "Gunakan bahasa Indonesia penuh."
+            if tone == 'assertive':
+                tone_instruction = "Gunakan gaya bahasa ENTJ yang berorientasi pada target, tegas, percaya diri, menonjolkan inisiatif kepemimpinan operasional, dan proaktif."
+            elif tone == 'concise':
+                tone_instruction = "Gunakan gaya bahasa yang sangat singkat, padat, ringkas, langsung pada intinya (maksimal 3 paragraf pendek)."
+            else:
+                tone_instruction = "Gunakan gaya bahasa profesional, formal, sopan, dan terstruktur secara akademis."
+
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
             
             prompt = f"""
-            Buatkan draft email (Cover Letter) profesional dalam bahasa yang paling cocok dengan posisi ini (Inggris atau Indonesia) untuk melamar lowongan berikut.
+            Buatkan draft email (Cover Letter) lamaran kerja berdasarkan instruksi berikut.
+            
+            Instruksi Bahasa: {lang_instruction}
+            Instruksi Gaya Bahasa (Tone): {tone_instruction}
 
             === PROFIL SAYA ===
             Nama: {CANDIDATE_PROFILE.get('name')}
@@ -246,10 +260,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             Posisi: {job_data.get('title')}
             
             Fokuskan pada kemampuan operasional, supply chain, kepemimpinan, atau adaptabilitas saya yang cepat sebagai fresh graduate.
-            Buatlah singkat, profesional, langsung pada intinya (tidak lebih dari 3-4 paragraf pendek). 
             Berikan sapaan kepada "Hiring Manager" atau "Tim Rekrutmen {job_data.get('company')}".
-            Jangan gunakan placeholder yang tidak saya berikan (seperti [Alamat Perusahaan]), biarkan natural saja.
-            Hanya balas dengan isi suratnya.
+            Jangan gunakan placeholder yang tidak saya berikan (seperti [Alamat Perusahaan]), biarkan surat tersebut langsung siap di-copy-paste secara natural.
+            Hanya balas dengan isi suratnya tanpa penjelas tambahan lainnya.
             """
 
             payload = {
