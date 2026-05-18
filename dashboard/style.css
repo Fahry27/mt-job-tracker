@@ -739,6 +739,7 @@ body {
     .header-right { width: 100%; display: flex; gap: 8px; align-items: center; }
     .search-box { flex: 1; min-width: 0; }
 
+    .sub-header { height: auto; }
     .sub-header .header-container { flex-direction: column; gap: 8px; align-items: flex-start; }
     .sub-header-left { width: 100%; }
     .sub-header-right { width: 100%; flex-wrap: wrap; gap: 8px; }

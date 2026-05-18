@@ -642,9 +642,9 @@ function renderInsights() {
     if (!insightsData) {
         container.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center;">
-                <span class="material-icons-round" style="font-size:64px; color:var(--text-light); margin-bottom:16px;">analytics</span>
+                <span class="material-icons-round" style="font-size:64px; color:var(--store-text-muted); margin-bottom:16px;">analytics</span>
                 <h3 style="margin-bottom:8px;">Data Insights Belum Tersedia</h3>
-                <p style="color:var(--text-light); max-width:400px;">Jalankan scraper dengan argumen --powerful --use-ai untuk menghasilkan AI Market Insights.</p>
+                <p style="color:var(--store-text-muted); max-width:400px;">Jalankan scraper dengan argumen --powerful --use-ai untuk menghasilkan AI Market Insights.</p>
             </div>
         `;
         show('insights-container');
@@ -652,7 +652,7 @@ function renderInsights() {
     }
     
     let skillsHtml = insightsData.top_skills.map(s => `
-        <div style="display:flex; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--border); align-items:center;">
+        <div style="display:flex; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--store-border); align-items:center;">
             <span style="font-weight:600; font-size:15px;">${s.skill}</span>
             <span class="chip ${s.demand === 'Tinggi' ? 'chip-fire' : 'chip-industry'}">${s.demand}</span>
         </div>
@@ -661,19 +661,19 @@ function renderInsights() {
     container.innerHTML = `
         <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:24px; margin-top:8px;">
             <div style="display:flex; flex-direction:column; gap:24px;">
-                <div style="background:white; border-radius:16px; padding:32px; border:1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="background:var(--store-surface); border-radius:16px; padding:32px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem; display:flex; align-items:center; gap:10px;"><span class="material-icons-round" style="color:var(--store-blue);">trending_up</span> Tren Perekrutan Terkini</h3>
-                    <p style="color:var(--text-color); line-height:1.7; font-size:15px; margin:0;">${insightsData.hiring_trend_summary}</p>
+                    <p style="color:var(--store-text-main); line-height:1.7; font-size:15px; margin:0;">${insightsData.hiring_trend_summary}</p>
                 </div>
                 
-                <div style="background:white; border-radius:16px; padding:32px; border:1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="background:var(--store-surface); border-radius:16px; padding:32px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem; display:flex; align-items:center; gap:10px;"><span class="material-icons-round" style="color:var(--store-green);">payments</span> Ekspektasi Gaji & Kompensasi</h3>
                     <p style="color:var(--store-green); font-weight:600; font-size:1.1rem; margin:0;">${insightsData.salary_insights}</p>
                 </div>
             </div>
             
-            <div style="background:white; border-radius:16px; border:1px solid var(--border); overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); align-self:start;">
-                <div style="padding:20px 24px; background:var(--bg-color); border-bottom:1px solid var(--border);">
+            <div style="background:var(--store-surface); border-radius:16px; border:1px solid var(--store-border); overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); align-self:start;">
+                <div style="padding:20px 24px; background:var(--store-surface); border-bottom:1px solid var(--store-border);">
                     <h3 style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;"><span class="material-icons-round" style="color:var(--store-blue); font-size:20px;">model_training</span> Top Skills Diminati</h3>
                 </div>
                 <div style="display:flex; flex-direction:column;">

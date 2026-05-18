@@ -93,7 +93,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(b'{"error": "GEMINI_API_KEY belum dikonfigurasi di config/ai.py"}')
                 return
 
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
             
             prompt = f"""
             Buatkan draft email (Cover Letter) profesional dalam bahasa yang paling cocok dengan posisi ini (Inggris atau Indonesia) untuk melamar lowongan berikut.
@@ -151,7 +151,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(b'{"error": "GEMINI_API_KEY belum dikonfigurasi"}')
                 return
 
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
             prompt = f"""
             Kamu adalah seorang HR Coach profesional. Buatkan daftar persiapan wawancara untuk kandidat berikut:
 
