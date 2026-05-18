@@ -124,9 +124,60 @@ def check_reminders():
     except:
         pass
 
+def check_morning_brief():
+    """Check if it's 8:00 AM and send daily top 3 jobs if not sent yet today."""
+    now = time.localtime()
+    if now.tm_hour == 8:
+        today_str = time.strftime("%Y-%m-%d")
+        state_file = os.path.join(DIRECTORY, "data", "brief_state.json")
+        last_sent = ""
+        
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, "r") as f:
+                    last_sent = json.load(f).get("last_sent_date", "")
+            except:
+                pass
+                
+        if last_sent != today_str:
+            # We need to send the brief!
+            apply_today_path = os.path.join(DIRECTORY, "output", "latest", "apply_today.csv")
+            if os.path.exists(apply_today_path):
+                import csv
+                try:
+                    jobs = []
+                    with open(apply_today_path, "r", encoding="utf-8-sig") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            score = float(row.get("Score", 0))
+                            jobs.append((row, score))
+                    
+                    if jobs:
+                        jobs.sort(key=lambda x: x[1], reverse=True)
+                        top_3 = jobs[:3]
+                        
+                        msg = "🌅 **Top 3 Lowongan MT Terbaik Hari Ini** 🌅\n\n"
+                        for idx, (job, score) in enumerate(top_3, 1):
+                            msg += f"{idx}. **{job.get('Job Title')}** @ {job.get('Company')}\n"
+                            msg += f"   🎯 Score: {score}\n"
+                            msg += f"   📍 Lokasi: {job.get('Location')}\n"
+                            if job.get('Link') and job.get('Link') != 'Tidak tercantum':
+                                msg += f"   🔗 [Apply Disini]({job.get('Link')})\n"
+                            msg += "\n"
+                            
+                        msg += "Semangat apply hari ini! 💪 Buka dashboard untuk info lengkap."
+                        send_message(TELEGRAM_CHAT_ID, msg)
+                        
+                        # Save state
+                        with open(state_file, "w") as f:
+                            json.dump({"last_sent_date": today_str}, f)
+                except Exception as e:
+                    print(f"Failed to generate morning brief: {e}")
+
 def main():
     print("🤖 Telegram Agent started. Listening for commands...")
     offset = None
+    last_gmail_sync = 0
     
     while True:
         try:
@@ -149,11 +200,22 @@ def main():
                             print(f"Received command: {text}")
                             process_command(text, chat_id)
             
-            # Check reminders every polling cycle
+            # Check proactive tasks every polling cycle
             check_reminders()
+            check_morning_brief()
+            
+            # Check Gmail Sync every 10 minutes (600 seconds)
+            current_time = time.time()
+            if current_time - last_gmail_sync > 600:
+                last_gmail_sync = current_time
+                try:
+                    script_path = os.path.join(DIRECTORY, "gmail_sync.py")
+                    if os.path.exists(script_path):
+                        subprocess.run(["python3", script_path], capture_output=True, cwd=DIRECTORY)
+                except:
+                    pass
             
         except requests.exceptions.RequestException:
-            # Ignore network errors and retry
             time.sleep(5)
         except Exception as e:
             print(f"Error in polling loop: {e}")

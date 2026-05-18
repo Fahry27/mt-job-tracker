@@ -170,6 +170,8 @@ function switchTab(tab) {
 function setupSearch() {
     document.getElementById('search-input').addEventListener('input', renderTab);
     document.getElementById('score-filter').addEventListener('change', renderTab);
+    if(document.getElementById('location-filter')) document.getElementById('location-filter').addEventListener('change', renderTab);
+    if(document.getElementById('industry-filter')) document.getElementById('industry-filter').addEventListener('change', renderTab);
 }
 
 // ===================== FETCH DATA =====================
@@ -237,8 +239,45 @@ function initUI() {
     if(el('all-count')) el('all-count').textContent = allJobs.length;
     if(el('apply-today-count')) el('apply-today-count').textContent = applyTodayJobs.length;
 
+    populateFilters();
     renderTab();
     updateAppliedBadge();
+}
+
+function populateFilters() {
+    const locations = new Set();
+    const industries = new Set();
+    
+    allJobs.forEach(j => {
+        if (j.Location && j.Location !== 'Tidak tercantum') {
+            j.Location.split(',').map(l => l.trim()).forEach(l => {
+                if (l) locations.add(l);
+            });
+        }
+        
+        const indMatch = (j['Why Match'] || '').match(/Industry match:\s([^;]+)/);
+        if (indMatch && indMatch[1]) {
+            industries.add(indMatch[1].trim());
+        }
+    });
+    
+    const locSelect = document.getElementById('location-filter');
+    if (locSelect && locSelect.options.length <= 1) {
+        Array.from(locations).sort().forEach(loc => {
+            const opt = document.createElement('option');
+            opt.value = loc; opt.textContent = loc;
+            locSelect.appendChild(opt);
+        });
+    }
+    
+    const indSelect = document.getElementById('industry-filter');
+    if (indSelect && indSelect.options.length <= 1) {
+        Array.from(industries).sort().forEach(ind => {
+            const opt = document.createElement('option');
+            opt.value = ind; opt.textContent = ind;
+            indSelect.appendChild(opt);
+        });
+    }
 }
 
 // ===================== RENDER TAB =====================
@@ -251,6 +290,8 @@ function renderTab() {
 
     const query = (el('search-input').value || '').toLowerCase().trim();
     const minScore = parseInt(el('score-filter').value || '0');
+    const locationQuery = (el('location-filter') ? el('location-filter').value.toLowerCase() : '');
+    const industryQuery = (el('industry-filter') ? el('industry-filter').value.toLowerCase() : '');
 
     const titles = {
         'apply-today': ['Rekomendasi Hari Ini', 'Lowongan terbaik yang sesuai dengan profil Anda'],
@@ -296,6 +337,17 @@ function renderTab() {
 
     if (minScore > 0) {
         jobs = jobs.filter(j => j._score >= minScore);
+    }
+    
+    if (locationQuery) {
+        jobs = jobs.filter(j => (j.Location || '').toLowerCase().includes(locationQuery));
+    }
+    
+    if (industryQuery) {
+        jobs = jobs.filter(j => {
+            const indMatch = (j['Why Match'] || '').match(/Industry match:\s([^;]+)/);
+            return indMatch && indMatch[1].toLowerCase().includes(industryQuery);
+        });
     }
 
     jobs = [...jobs].sort((a, b) => b._score - a._score || parseInt(a.Rank) - parseInt(b.Rank));

@@ -70,6 +70,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(b'{"success": true}')
+                
+                # Trigger Google Sheets sync in background
+                import threading
+                import subprocess
+                def run_sync():
+                    try:
+                        script_path = os.path.join(DIRECTORY, "sync_sheets.py")
+                        subprocess.run(["python3", script_path], cwd=DIRECTORY)
+                    except:
+                        pass
+                threading.Thread(target=run_sync, daemon=True).start()
+                
             except Exception as e:
                 self.send_response(400)
                 self.end_headers()
