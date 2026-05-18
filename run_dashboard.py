@@ -173,6 +173,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(get_state()).encode('utf-8'))
+        elif self.path in ('', '/', '/index.html'):
+            self.send_response(301)
+            self.send_header('Location', '/dashboard/')
+            self.end_headers()
+        elif self.path == '/dashboard':
+            self.send_response(301)
+            self.send_header('Location', '/dashboard/')
+            self.end_headers()
         else:
             super().do_GET()
 
