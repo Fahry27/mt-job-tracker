@@ -470,7 +470,8 @@ function renderKanban() {
     });
     
     document.querySelectorAll('.kanban-column').forEach(col => {
-        const count = col.querySelectorAll('.k-card').length;
+        const cardsContainer = col.querySelector('.kanban-cards');
+        const count = cardsContainer.querySelectorAll('.k-card').length;
         if(col.querySelector('.k-count')) col.querySelector('.k-count').textContent = count;
         
         // Add collapse toggle if not already present
@@ -481,17 +482,30 @@ function renderKanban() {
             btn.innerHTML = '<span class="material-icons-round" style="font-size:18px;">expand_less</span>';
             btn.style.cssText = 'background:none; border:none; cursor:pointer; color:var(--store-text-muted); padding:4px; border-radius:50%; display:flex;';
             btn.addEventListener('click', () => {
-                const cards = col.querySelector('.kanban-cards');
+                const isCollapsed = col.classList.toggle('collapsed');
                 const icon = btn.querySelector('.material-icons-round');
-                if (cards.style.display === 'none') {
-                    cards.style.display = '';
-                    icon.textContent = 'expand_less';
-                } else {
-                    cards.style.display = 'none';
-                    icon.textContent = 'expand_more';
-                }
+                icon.textContent = isCollapsed ? 'expand_more' : 'expand_less';
             });
             header.appendChild(btn);
+        }
+
+        // Feature: elegant minimalist empty placeholder card
+        if (count === 0) {
+            const status = col.dataset.status;
+            let icon = 'inbox';
+            let label = 'Belum ada data';
+            if (status === 'applied') { icon = 'inbox'; label = 'Belum ada lamaran'; }
+            else if (status === 'assessment') { icon = 'fact_check'; label = 'Belum ada ujian'; }
+            else if (status === 'interview') { icon = 'event'; label = 'Belum ada interview'; }
+            else if (status === 'result') { icon = 'emoji_events'; label = 'Belum ada hasil'; }
+
+            const placeholder = document.createElement('div');
+            placeholder.className = 'k-empty-placeholder';
+            placeholder.innerHTML = `
+                <span class="material-icons-round">${icon}</span>
+                <p>${label}</p>
+            `;
+            cardsContainer.appendChild(placeholder);
         }
     });
 }

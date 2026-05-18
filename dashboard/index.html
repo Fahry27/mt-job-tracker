@@ -118,19 +118,19 @@
                 <!-- Kanban Board -->
                 <div id="kanban-board" class="kanban-container hidden">
                     <div class="kanban-column" data-status="applied">
-                        <div class="kanban-header">Applied <span class="k-count">0</span></div>
+                        <div class="kanban-header"><span class="kanban-header-text">Applied</span> <span class="k-count">0</span></div>
                         <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'applied')"></div>
                     </div>
                     <div class="kanban-column" data-status="assessment">
-                        <div class="kanban-header">Assessment <span class="k-count">0</span></div>
+                        <div class="kanban-header"><span class="kanban-header-text">Assessment</span> <span class="k-count">0</span></div>
                         <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'assessment')"></div>
                     </div>
                     <div class="kanban-column" data-status="interview">
-                        <div class="kanban-header">Interview <span class="k-count">0</span></div>
+                        <div class="kanban-header"><span class="kanban-header-text">Interview</span> <span class="k-count">0</span></div>
                         <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'interview')"></div>
                     </div>
                     <div class="kanban-column" data-status="result">
-                        <div class="kanban-header">Result <span class="k-count">0</span></div>
+                        <div class="kanban-header"><span class="kanban-header-text">Result</span> <span class="k-count">0</span></div>
                         <div class="kanban-cards" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over'); dropKanban(event, 'result')"></div>
                     </div>
                 </div>

@@ -1349,3 +1349,82 @@ body::before {
     background: var(--store-accent);
     color: #fff;
 }
+
+/* =================== KANBAN COLLAPSE & PLACEHOLDERS =================== */
+.kanban-column {
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.kanban-column.collapsed {
+    min-width: 72px !important;
+    max-width: 72px !important;
+    width: 72px !important;
+    padding: 20px 8px !important;
+}
+
+.kanban-column.collapsed .kanban-cards {
+    display: none !important;
+}
+
+.kanban-column.collapsed .kanban-header {
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    align-items: center;
+}
+
+.kanban-column.collapsed .kanban-header-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    margin: 24px 0;
+    font-size: 15px;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+.kanban-column.collapsed .k-count {
+    padding: 2px 6px;
+    font-size: 11px;
+}
+
+/* Empty Placeholder Card Styling */
+.k-empty-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    border: 2px dashed rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-lg);
+    color: var(--store-text-muted);
+    gap: 10px;
+    height: auto;
+    min-height: 180px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.02);
+    transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .k-empty-placeholder {
+    border-color: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.k-empty-placeholder .material-icons-round {
+    font-size: 32px;
+    opacity: 0.45;
+    color: var(--store-accent);
+}
+
+.k-empty-placeholder p {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.6;
+    margin: 0;
+}
