@@ -61,15 +61,24 @@ def get_stats():
     return stats_text
 
 def process_command(text, chat_id):
-    cmd = text.split()[0].lower()
+    cmd = text.split()[0].lower() if text else ""
     
-    if cmd == '/ping':
+    main_keyboard = {
+        "keyboard": [
+            [{"text": "📊 Lihat Stats"}, {"text": "🌅 Morning Brief"}],
+            [{"text": "🚀 Jalankan Scraper"}, {"text": "🏓 Ping Bot"}]
+        ],
+        "resize_keyboard": True,
+        "is_persistent": True
+    }
+    
+    if cmd == '/ping' or text == '🏓 Ping Bot':
         send_message(chat_id, "🏓 Pong! Agent is running normally.")
     
-    elif cmd == '/stats':
+    elif cmd == '/stats' or text == '📊 Lihat Stats':
         send_message(chat_id, get_stats())
         
-    elif cmd == '/run':
+    elif cmd == '/run' or text == '🚀 Jalankan Scraper':
         send_message(chat_id, "🚀 Menjalankan Scraper dengan mode Powerful & AI...\nMohon tunggu sekitar 2-3 menit.")
         
         try:
@@ -86,20 +95,16 @@ def process_command(text, chat_id):
                 send_message(chat_id, f"❌ Terjadi kesalahan saat scraping:\n{process.stderr[-200:]}")
         except Exception as e:
             send_message(chat_id, f"❌ Gagal menjalankan skrip: {e}")
-    elif cmd == '/brief':
+            
+    elif cmd == '/brief' or text == '🌅 Morning Brief':
         check_morning_brief(force=True)
             
-    elif cmd == '/help' or cmd == '/start':
+    elif cmd == '/help' or cmd == '/start' or text == 'Mulai':
         help_text = (
             "🤖 **MT Job Tracker Agent**\n\n"
-            "Perintah yang tersedia:\n"
-            "/ping - Cek status bot\n"
-            "/stats - Lihat statistik lamaran Anda\n"
-            "/run - Jalankan scraper saat ini juga\n"
-            "/brief - Dapatkan Top 3 Lowongan hari ini\n"
-            "/help - Tampilkan pesan ini"
+            "Gunakan tombol di bawah untuk mengontrol bot dengan cepat!"
         )
-        send_message(chat_id, help_text)
+        send_message(chat_id, help_text, reply_markup=main_keyboard)
 
 def check_reminders():
     """Check for upcoming interview reminders and send notifications."""
