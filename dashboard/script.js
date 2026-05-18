@@ -469,10 +469,12 @@ function renderKanban() {
         }
     });
     
+    let totalVisibleKanban = 0;
     document.querySelectorAll('.kanban-column').forEach(col => {
         const cardsContainer = col.querySelector('.kanban-cards');
         const count = cardsContainer.querySelectorAll('.k-card').length;
         if(col.querySelector('.k-count')) col.querySelector('.k-count').textContent = count;
+        totalVisibleKanban += count;
         
         // Add collapse toggle if not already present
         const header = col.querySelector('.kanban-header');
@@ -508,6 +510,8 @@ function renderKanban() {
             cardsContainer.appendChild(placeholder);
         }
     });
+
+    if (el('applied-count')) el('applied-count').textContent = totalVisibleKanban;
 }
 
 window.dropKanban = function(event, status) {
@@ -1084,14 +1088,27 @@ function updateSummaryBar(jobs, tab) {
     } else if (tab === 'browse') {
         bar.textContent = `Menampilkan ${jobs.length} lowongan dari total ${allJobs.length} posisi yang tersedia`;
     } else if (tab === 'tracker') {
-        bar.textContent = state.appliedCount() > 0
-            ? `Anda memiliki ${state.appliedCount()} lamaran di papan Kanban.`
-            : 'Belum ada lamaran tersimpan. Mulai eksplorasi sekarang.';
+        let totalVisibleKanban = 0;
+        document.querySelectorAll('.kanban-column .kanban-cards').forEach(cardsContainer => {
+            totalVisibleKanban += cardsContainer.querySelectorAll('.k-card').length;
+        });
+        bar.textContent = totalVisibleKanban > 0
+            ? `Anda memiliki ${totalVisibleKanban} lamaran di papan Kanban.`
+            : 'Belum ada lamaran tersimpan dengan kriteria ini. Mulai eksplorasi sekarang.';
     }
 }
 
 function updateAppliedBadge() {
-    if(el('applied-count')) el('applied-count').textContent = state.appliedCount();
+    if (!el('applied-count')) return;
+    if (currentTab === 'tracker') {
+        let totalVisibleKanban = 0;
+        document.querySelectorAll('.kanban-column .kanban-cards').forEach(cardsContainer => {
+            totalVisibleKanban += cardsContainer.querySelectorAll('.k-card').length;
+        });
+        el('applied-count').textContent = totalVisibleKanban;
+    } else {
+        el('applied-count').textContent = state.appliedCount();
+    }
 }
 
 function showError() {
