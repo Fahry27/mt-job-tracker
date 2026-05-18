@@ -589,7 +589,8 @@ function buildCard(job, displayRank, isKanban) {
     const companyName = job.Company || 'Unknown';
     
     // Feature 6: Comparison checkbox (only on list view)
-    const compareHtml = !isKanban ? `<input type="checkbox" class="compare-checkbox" data-id="${id}" title="Pilih untuk bandingkan" onclick="event.stopPropagation(); toggleCompare('${id}')">` : '';
+    const isCompared = compareList.has(id);
+    const compareHtml = !isKanban ? `<button class="btn-secondary compare-btn ${isCompared ? 'active' : ''}" data-id="${id}" title="Pilih untuk bandingkan" onclick="event.stopPropagation(); toggleCompare('${id}', this)"><span class="material-icons-round">compare_arrows</span></button>` : '';
 
     // Feature 3: Score Breakdown Tooltip
     let scoreClass = 'score-low';
@@ -617,11 +618,18 @@ function buildCard(job, displayRank, isKanban) {
     const appliedTag = isApplied && !isKanban ? `<span class="tag" style="background:var(--store-green-bg); color:var(--store-green);">✓ Applied</span>` : '';
 
     const salary = job['salary_ai_extracted'];
-    const salaryHtml = salary ? `<span><span class="material-icons-round">payments</span> <strong style="color:var(--store-green);">${salary}</strong></span>` : '';
-    const location = job.Location && job.Location !== 'Tidak tercantum' ? `<span><span class="material-icons-round">location_on</span> ${job.Location}</span>` : '';
+    const compEnc = encodeURIComponent(companyName);
+    const titleEnc = encodeURIComponent(job['Job Title'] || 'Management Trainee');
+    
+    const salaryHtml = salary && salary !== '-' && salary !== 'Tidak tercantum'
+        ? `<span><span class="material-icons-round">payments</span> <strong style="color:var(--store-green);">${salary}</strong></span>` 
+        : `<span><span class="material-icons-round">payments</span> <a href="https://www.google.com/search?q=gaji+${titleEnc}+di+${compEnc}" target="_blank" style="color:var(--store-blue);text-decoration:none;" onclick="event.stopPropagation()">Cari Info Gaji ↗</a></span>`;
+        
+    const location = job.Location && job.Location !== 'Tidak tercantum' && job.Location !== '-' 
+        ? `<span><span class="material-icons-round">location_on</span> ${job.Location}</span>` 
+        : `<span><span class="material-icons-round">location_on</span> <a href="https://www.google.com/search?q=lokasi+kantor+${compEnc}" target="_blank" style="color:var(--store-blue);text-decoration:none;" onclick="event.stopPropagation()">Cari Lokasi ↗</a></span>`;
 
     // Feature 8: Quick Research
-    const compEnc = encodeURIComponent(companyName);
     const researchHtml = `
         <div class="quick-research">
             <a href="https://www.linkedin.com/search/results/companies/?keywords=${compEnc}" target="_blank" class="quick-btn" onclick="event.stopPropagation()">
@@ -652,7 +660,6 @@ function buildCard(job, displayRank, isKanban) {
 
     if (!isKanban) {
         card.innerHTML = `
-            ${compareHtml}
             ${scoreHtml}
             <div class="p-company">${companyName}</div>
             <div class="p-title"><a href="${job.URL || '#'}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${job['Job Title'] || '—'}</a></div>
@@ -664,6 +671,7 @@ function buildCard(job, displayRank, isKanban) {
             <div class="p-reason">${whyMatch.replace(/;/g, ' • ')}</div>
             ${researchHtml}
             <div class="p-actions" style="margin-top:20px;">
+                ${compareHtml}
                 <button class="btn-primary apply-btn${isApplied ? ' applied' : ''}" data-id="${id}">${isApplied ? '✓ Sudah Apply' : 'Tandai Apply'}</button>
                 <button class="btn-secondary hide-btn" data-id="${id}" title="Sembunyikan"><span class="material-icons-round">visibility_off</span></button>
             </div>
@@ -760,7 +768,7 @@ function renderOverview() {
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon green"><span class="material-icons-round">database</span></div>
+            <div class="stat-icon green"><span class="material-icons-round">storage</span></div>
             <div class="stat-info">
                 <h4>Total Discrape</h4>
                 <p>${allJobs.length}</p>
@@ -1077,17 +1085,17 @@ window.editNote = function(id) {
 // ===================== COMPARISON MODE =====================
 let compareList = new Set();
 
-window.toggleCompare = function(id) {
+window.toggleCompare = function(id, btnEl) {
     if (compareList.has(id)) {
         compareList.delete(id);
+        if(btnEl) btnEl.classList.remove('active');
     } else {
         if (compareList.size >= 3) {
             alert('Maksimal 3 lowongan untuk dibandingkan.');
-            // uncheck the checkbox
-            document.querySelector(`.compare-checkbox[data-id="${id}"]`).checked = false;
             return;
         }
         compareList.add(id);
+        if(btnEl) btnEl.classList.add('active');
     }
     
     const bar = el('comparison-bar');
@@ -1101,7 +1109,7 @@ window.toggleCompare = function(id) {
 
 el('compare-clear').addEventListener('click', () => {
     compareList.clear();
-    document.querySelectorAll('.compare-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.compare-btn').forEach(btn => btn.classList.remove('active'));
     el('comparison-bar').classList.add('hidden');
 });
 
