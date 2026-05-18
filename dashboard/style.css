@@ -219,12 +219,14 @@ body::before {
     min-width: 20px;
     text-align: center;
 }
-.nav-item.active .nav-badge {
+.nav-item.active .nav-badge,
+.nav-item.active .nav-badge.muted {
     background: var(--store-blue);
+    color: #ffffff;
 }
 .nav-badge.muted {
     background: var(--store-border);
-    color: var(--store-text-main);
+    color: var(--store-text-muted);
 }
 
 .header-right {
