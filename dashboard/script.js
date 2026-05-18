@@ -197,6 +197,8 @@ async function fetchStateAndData() {
             const data = await stateRes.json();
             serverState.kanban = data.kanban || {};
             serverState.hidden = data.hidden || {};
+            serverState.apply_dates = data.apply_dates || {};
+            serverState.notes = data.notes || {};
             state.migrateFromLocal();
         }
     } catch (e) {
@@ -644,9 +646,9 @@ function buildCard(job, displayRank, isKanban) {
 
     // Feature 4: Interview Countdown
     let countdownHtml = '';
-    if (isKanban && state.data.kanban[id] === 'interview') {
+    if (isKanban && state.getKanban()[id] === 'interview') {
         // Mock countdown logic based on apply_date (in real scenario, we'd have interview_date)
-        const applyDate = state.data.apply_dates?.[id];
+        const applyDate = serverState.apply_dates?.[id];
         if (applyDate) {
             const daysSinceApply = Math.floor((Date.now() - new Date(applyDate).getTime()) / (1000 * 60 * 60 * 24));
             // Simulate interview date is 14 days after apply
