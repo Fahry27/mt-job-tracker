@@ -204,17 +204,6 @@ def main():
             check_reminders()
             check_morning_brief()
             
-            # Check Gmail Sync every 10 minutes (600 seconds)
-            current_time = time.time()
-            if current_time - last_gmail_sync > 600:
-                last_gmail_sync = current_time
-                try:
-                    script_path = os.path.join(DIRECTORY, "gmail_sync.py")
-                    if os.path.exists(script_path):
-                        subprocess.run(["python3", script_path], capture_output=True, cwd=DIRECTORY)
-                except:
-                    pass
-            
         except requests.exceptions.RequestException:
             time.sleep(5)
         except Exception as e:
