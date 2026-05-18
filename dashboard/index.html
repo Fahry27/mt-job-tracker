@@ -169,6 +169,26 @@
         </div>
     </div>
 
+    <!-- Comparison Bar -->
+    <div id="comparison-bar" class="comparison-bar hidden">
+        <span id="compare-count">2 terpilih</span>
+        <button id="compare-btn">Bandingkan</button>
+        <button id="compare-clear" style="background: var(--store-bg); color: var(--store-text-main);">Batal</button>
+    </div>
+
+    <!-- Comparison Modal -->
+    <div id="compare-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Perbandingan Lowongan</h2>
+                <button class="close-modal material-icons-round" onclick="closeCompareModal()">close</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div id="compare-table-container" style="overflow-x: auto; padding: 24px;"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="script.js"></script>
 </body>

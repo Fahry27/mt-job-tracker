@@ -263,6 +263,88 @@ def check_deadlines(force=False):
                 except Exception as e:
                     print(f"Failed to check deadlines: {e}")
 
+def check_follow_up():
+    now = time.localtime()
+    if now.tm_hour == 10: # Check at 10 AM
+        today_str = time.strftime("%Y-%m-%d")
+        state_file = os.path.join(DIRECTORY, "data", "followup_state.json")
+        last_sent = ""
+        try:
+            if os.path.exists(state_file):
+                with open(state_file, "r") as f:
+                    last_sent = json.load(f).get("last_sent_date", "")
+        except: pass
+        
+        if last_sent != today_str:
+            dashboard_state_file = os.path.join(DIRECTORY, "data", "dashboard_state.json")
+            try:
+                with open(dashboard_state_file, "r") as f:
+                    data = json.load(f)
+                    kanban = data.get("kanban", {})
+                    apply_dates = data.get("apply_dates", {})
+                
+                reminders = []
+                for job_id, status in kanban.items():
+                    if status == "applied" and job_id in apply_dates:
+                        days_ago = (time.time() - time.mktime(time.strptime(apply_dates[job_id], "%Y-%m-%d"))) / 86400
+                        if days_ago >= 7 and days_ago < 8:
+                            reminders.append(job_id)
+                
+                if reminders:
+                    msg = "🔔 *Reminder Follow-Up*\n\nAnda sudah melamar pekerjaan berikut 7 hari yang lalu tapi belum ada update:\n"
+                    for rid in reminders:
+                        msg += f"- {rid}\n"
+                    msg += "\nSilakan periksa email atau kirimkan email follow-up!"
+                    send_message(TELEGRAM_CHAT_ID, msg)
+                
+                with open(state_file, "w") as f:
+                    json.dump({"last_sent_date": today_str}, f)
+            except Exception as e:
+                print("Follow up error:", e)
+
+def check_weekly_stats():
+    now = time.localtime()
+    if now.tm_wday == 6 and now.tm_hour == 17: # Sunday 17:00
+        today_str = time.strftime("%Y-%m-%d")
+        state_file = os.path.join(DIRECTORY, "data", "weekly_stats_state.json")
+        last_sent = ""
+        try:
+            if os.path.exists(state_file):
+                with open(state_file, "r") as f:
+                    last_sent = json.load(f).get("last_sent_date", "")
+        except: pass
+        
+        if last_sent != today_str:
+            send_message(TELEGRAM_CHAT_ID, get_stats())
+            with open(state_file, "w") as f:
+                json.dump({"last_sent_date": today_str}, f)
+
+def check_auto_scraper():
+    now = time.localtime()
+    if now.tm_hour == 7: # 07:00 AM
+        today_str = time.strftime("%Y-%m-%d")
+        state_file = os.path.join(DIRECTORY, "data", "auto_scraper_state.json")
+        last_sent = ""
+        try:
+            if os.path.exists(state_file):
+                with open(state_file, "r") as f:
+                    last_sent = json.load(f).get("last_sent_date", "")
+        except: pass
+        
+        if last_sent != today_str:
+            send_message(TELEGRAM_CHAT_ID, "⚙️ *Auto-Scraper* dimulai untuk pencarian harian...")
+            import threading
+            def run_scrape():
+                try:
+                    subprocess.run(["python3", "scraper/main.py", "--mode", "all", "--core-only", "--global-limit", "10"], cwd=DIRECTORY)
+                    send_message(TELEGRAM_CHAT_ID, "✅ *Auto-Scraper* harian selesai dijalankan!")
+                except Exception as e:
+                    send_message(TELEGRAM_CHAT_ID, f"❌ *Auto-Scraper* error: {e}")
+            threading.Thread(target=run_scrape, daemon=True).start()
+            
+            with open(state_file, "w") as f:
+                json.dump({"last_sent_date": today_str}, f)
+
 def main():
     print("🤖 Telegram Agent started. Listening for commands...")
     offset = None
@@ -293,6 +375,9 @@ def main():
             check_reminders()
             check_morning_brief()
             check_deadlines()
+            check_follow_up()
+            check_weekly_stats()
+            check_auto_scraper()
             
         except requests.exceptions.RequestException:
             time.sleep(5)

@@ -567,102 +567,142 @@ if(copyBtn) {
     });
 }
 
-// ===================== BUILD CARD =====================
 function buildCard(job, displayRank, isKanban) {
     const score = job._score;
     const id = job._id;
     const isApplied = state.isApplied(id);
 
     const card = document.createElement('div');
-    card.className = `job-card${isApplied && !isKanban ? ' applied' : ''}`;
+    card.className = isKanban ? 'k-card' : 'product-card';
+    if (isApplied && !isKanban) card.classList.add('applied');
     card.dataset.id = id;
 
     if (isKanban) {
         card.draggable = true;
         card.addEventListener('dragstart', e => {
             e.dataTransfer.setData('text/plain', id);
-            setTimeout(() => card.style.opacity = '0.5', 0);
+            setTimeout(() => card.classList.add('dragging'), 0);
         });
-        card.addEventListener('dragend', () => card.style.opacity = '1');
+        card.addEventListener('dragend', () => card.classList.remove('dragging'));
     }
 
     const companyName = job.Company || 'Unknown';
-    const initials = getInitials(companyName);
-    const { bg, fg } = avatarColor(companyName);
-
-    const scoreClass = score >= 85 ? 'strong' : score >= 75 ? 'good' : score >= 60 ? 'possible' : score >= 45 ? 'weak' : 'skip';
-
-    const indMatch = (job['Why Match'] || '').match(/Industry match:\s([^;]+)/);
-    const industryTag = indMatch ? `<span class="chip chip-industry">${indMatch[1].trim()}</span>` : '';
-
-    const applyTodayTag = isApplyToday(job) && !isKanban ? `<span class="chip chip-fire">🔥 Apply today</span>` : '';
-    const appliedTag = isApplied && !isKanban ? `<span class="chip chip-applied">✓ Applied</span>` : '';
     
-    const hasAI = job['Why Match'] && job['Why Match'].includes('[AI]');
-    const aiTag = hasAI ? `<span class="chip chip-ai">🤖 AI</span>` : '';
+    // Feature 6: Comparison checkbox (only on list view)
+    const compareHtml = !isKanban ? `<input type="checkbox" class="compare-checkbox" data-id="${id}" title="Pilih untuk bandingkan" onclick="event.stopPropagation(); toggleCompare('${id}')">` : '';
+
+    // Feature 3: Score Breakdown Tooltip
+    let scoreClass = 'score-low';
+    if (score >= 85) scoreClass = 'score-high';
+    else if (score >= 75) scoreClass = 'score-medium';
+    else if (score >= 60) scoreClass = 'score-medium';
+    
+    // Parse why match for tooltip
+    const whyMatch = job['Why Match'] || '';
+    const breakdownRows = whyMatch.split(';').map(row => row.trim()).filter(Boolean);
+    const tooltipHtml = breakdownRows.length > 0 
+        ? `<div class="score-tooltip">${breakdownRows.map(r => `<div>${r}</div>`).join('')}</div>`
+        : '';
+
+    const scoreHtml = !isKanban ? `
+        <div class="score-badge ${scoreClass}">
+            ${Math.round(score)}
+            ${tooltipHtml}
+        </div>
+    ` : '';
+
+    const industryMatch = whyMatch.match(/Industry match:\s([^;]+)/);
+    const industryTag = industryMatch ? `<span class="tag">${industryMatch[1].trim()}</span>` : '';
+    const aiTag = whyMatch.includes('[AI]') ? `<span class="tag">🤖 AI Evaluated</span>` : '';
+    const appliedTag = isApplied && !isKanban ? `<span class="tag" style="background:var(--store-green-bg); color:var(--store-green);">✓ Applied</span>` : '';
 
     const salary = job['salary_ai_extracted'];
-    const salaryHtml = salary ? `<span class="meta-divider">·</span><span class="meta-location" style="color:var(--store-green); font-weight:500;">${salary}</span>` : '';
-    const location = job.Location && job.Location !== 'Tidak tercantum' ? `📍 ${job.Location}` : '';
+    const salaryHtml = salary ? `<span><span class="material-icons-round">payments</span> <strong style="color:var(--store-green);">${salary}</strong></span>` : '';
+    const location = job.Location && job.Location !== 'Tidak tercantum' ? `<span><span class="material-icons-round">location_on</span> ${job.Location}</span>` : '';
 
-    card.innerHTML = `
-        ${!isKanban ? `<button class="hide-btn material-icons-round" title="Sembunyikan" data-id="${id}">close</button>` : `<button class="hide-btn material-icons-round" title="Hapus dari Kanban" style="color:#d93025;" data-id="${id}">delete</button>`}
-        <div class="company-avatar" style="background:${bg};color:${fg}; position: relative; overflow: hidden;">
-            <div class="initials" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%;">${initials}</div>
-            <img class="real-logo" src="" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; background:white; display:none; padding:8px;" alt="Logo">
-        </div>
-        <div class="card-title">
-            <a href="${job.URL || '#'}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${job['Job Title'] || '—'}</a>
-        </div>
-        <div class="card-meta">
-            <span class="meta-company">${job.Company || '—'}</span>
-            ${location ? `<span class="meta-divider">·</span><span class="meta-location">${location}</span>` : ''}
-            ${salaryHtml}
-        </div>
-        <div class="card-tags">
-            ${aiTag}${industryTag}${applyTodayTag}${appliedTag}
-        </div>
-        ${isKanban ? buildTimelineHtml(id) : ''}
-        <div class="card-footer">
-            <div class="score-price ${scoreClass}">
-                <span class="label">Score</span>
-                ${Math.round(score)}
-            </div>
-            ${isKanban 
-                ? `<div style="display:flex; gap:6px; flex-wrap:wrap;">
-                     <button class="apply-btn chip-ai" style="padding:5px 10px; font-size:12px; width:auto;" onclick="openCoverLetterModal('${id}')">📝 Lamaran</button>
-                     <button class="apply-btn" style="padding:5px 10px; font-size:12px; width:auto; border-color:var(--store-orange); color:var(--store-orange);" onclick="openInterviewPrepModal('${id}')">🎤 Interview</button>
-                     <button class="apply-btn" style="padding:5px 10px; font-size:12px; width:auto; border-color:var(--store-green); color:var(--store-green);" onclick="openResumePrepModal('${id}')">📄 Bedah CV</button>
-                   </div>`
-                : `<button class="apply-btn${isApplied ? ' applied' : ''}" data-id="${id}">${isApplied ? '✓ Sudah Apply' : 'Tandai Apply'}</button>`
-            }
+    // Feature 8: Quick Research
+    const compEnc = encodeURIComponent(companyName);
+    const researchHtml = `
+        <div class="quick-research">
+            <a href="https://www.linkedin.com/search/results/companies/?keywords=${compEnc}" target="_blank" class="quick-btn" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg> LinkedIn
+            </a>
+            <a href="https://www.glassdoor.com/Search/results.htm?keyword=${compEnc}" target="_blank" class="quick-btn" onclick="event.stopPropagation()">
+                <span class="material-icons-round" style="font-size:14px;">work</span> Glassdoor
+            </a>
         </div>
     `;
 
+    // Feature 4: Interview Countdown
+    let countdownHtml = '';
+    if (isKanban && state.data.kanban[id] === 'interview') {
+        // Mock countdown logic based on apply_date (in real scenario, we'd have interview_date)
+        const applyDate = state.data.apply_dates?.[id];
+        if (applyDate) {
+            const daysSinceApply = Math.floor((Date.now() - new Date(applyDate).getTime()) / (1000 * 60 * 60 * 24));
+            // Simulate interview date is 14 days after apply
+            const daysLeft = 14 - daysSinceApply;
+            if (daysLeft > 0 && daysLeft <= 3) {
+                countdownHtml = `<div class="countdown-badge countdown-danger">⏳ ${daysLeft} hari lagi</div>`;
+            } else if (daysLeft > 3) {
+                countdownHtml = `<div class="countdown-badge countdown-warning">⏳ ${daysLeft} hari lagi</div>`;
+            }
+        }
+    }
+
     if (!isKanban) {
+        card.innerHTML = `
+            ${compareHtml}
+            ${scoreHtml}
+            <div class="p-company">${companyName}</div>
+            <div class="p-title"><a href="${job.URL || '#'}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${job['Job Title'] || '—'}</a></div>
+            <div class="p-meta">
+                ${location}
+                ${salaryHtml}
+            </div>
+            <div class="p-tags">${aiTag}${industryTag}${appliedTag}</div>
+            <div class="p-reason">${whyMatch.replace(/;/g, ' • ')}</div>
+            ${researchHtml}
+            <div class="p-actions" style="margin-top:20px;">
+                <button class="btn-primary apply-btn${isApplied ? ' applied' : ''}" data-id="${id}">${isApplied ? '✓ Sudah Apply' : 'Tandai Apply'}</button>
+                <button class="btn-secondary hide-btn" data-id="${id}" title="Sembunyikan"><span class="material-icons-round">visibility_off</span></button>
+            </div>
+        `;
+
         card.querySelector('.apply-btn').addEventListener('click', e => {
             e.stopPropagation();
             const wasApplied = state.isApplied(id);
             if (!wasApplied && job.URL) window.open(job.URL, '_blank', 'noopener,noreferrer');
-
             const nowApplied = state.toggle(id);
             const btn = card.querySelector('.apply-btn');
             btn.classList.toggle('applied', nowApplied);
             btn.textContent = nowApplied ? '✓ Sudah Apply' : 'Tandai Apply';
-            card.classList.toggle('applied', nowApplied);
             updateAppliedBadge();
         });
         
         card.querySelector('.hide-btn').addEventListener('click', e => {
             e.stopPropagation();
             state.hide(id);
-            card.style.transition = 'opacity 0.3s, transform 0.3s';
             card.style.opacity = '0';
-            card.style.transform = 'scale(0.9)';
             setTimeout(() => card.remove(), 300);
         });
+
     } else {
-        card.querySelector('.hide-btn').addEventListener('click', e => {
+        // Kanban Card Layout
+        card.innerHTML = `
+            <button class="remove-btn material-icons-round" data-id="${id}">close</button>
+            <div class="k-company">${companyName}</div>
+            <div class="k-title"><a href="${job.URL || '#'}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onclick="event.stopPropagation()">${job['Job Title'] || '—'}</a></div>
+            ${countdownHtml}
+            ${researchHtml}
+            <div class="k-actions">
+                <button class="k-action-btn" style="color:var(--store-blue);" onclick="openCoverLetterModal('${id}')">📝 Cover</button>
+                <button class="k-action-btn" style="color:var(--store-orange);" onclick="openInterviewPrepModal('${id}')">🎤 Prep</button>
+                <button class="k-action-btn" style="color:var(--store-green);" onclick="openResumePrepModal('${id}')">📄 CV</button>
+            </div>
+        `;
+
+        card.querySelector('.remove-btn').addEventListener('click', e => {
             e.stopPropagation();
             state.setStatus(id, null);
             card.remove();
@@ -671,7 +711,6 @@ function buildCard(job, displayRank, isKanban) {
         });
     }
 
-    loadCompanyLogo(companyName, card.querySelector('.real-logo'), card.querySelector('.initials'));
     return card;
 }
 
@@ -686,53 +725,68 @@ function renderOverview() {
     const d = new Date(summaryData.finished_at || Date.now());
     const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+    // Feature 7: Apply Heatmap logic
+    const dates = serverState.apply_dates || {};
+    const heatData = {};
+    Object.values(dates).forEach(dateStr => {
+        if (!heatData[dateStr]) heatData[dateStr] = 0;
+        heatData[dateStr]++;
+    });
+
+    let heatmapCells = '';
+    const today = new Date();
+    // Generate last 84 days (12 weeks)
+    for (let i = 83; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const ymd = d.toISOString().split('T')[0];
+        const count = heatData[ymd] || 0;
+        let level = 0;
+        if (count >= 4) level = 4;
+        else if (count === 3) level = 3;
+        else if (count === 2) level = 2;
+        else if (count >= 1) level = 1;
+        
+        heatmapCells += `<div class="heatmap-cell" data-level="${level}" title="${d.toLocaleDateString('id-ID')}: ${count} lamaran"></div>`;
+    }
+
     const container = el('overview-container');
     container.innerHTML = `
-        <div class="stat-card applied-stat">
-            <div class="stat-label">Sudah Apply</div>
-            <div class="stat-value">${applied}</div>
-            <div class="stat-desc">lowongan yang Anda lamar</div>
+        <div class="stat-card">
+            <div class="stat-icon blue"><span class="material-icons-round">check_circle</span></div>
+            <div class="stat-info">
+                <h4>Sudah Apply</h4>
+                <p>${applied}</p>
+            </div>
         </div>
-        <div class="stat-card default">
-            <div class="stat-label">Total Discrape</div>
-            <div class="stat-value">${allJobs.length}</div>
-            <div class="stat-desc">lowongan unik ditemukan</div>
+        <div class="stat-card">
+            <div class="stat-icon green"><span class="material-icons-round">database</span></div>
+            <div class="stat-info">
+                <h4>Total Discrape</h4>
+                <p>${allJobs.length}</p>
+            </div>
         </div>
-        <div class="stat-card good">
-            <div class="stat-label">Apply Today</div>
-            <div class="stat-value">${applyToday}</div>
-            <div class="stat-desc">rekomendasi lamar hari ini</div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--store-orange-bg);color:var(--store-orange);"><span class="material-icons-round">star</span></div>
+            <div class="stat-info">
+                <h4>Strong Match</h4>
+                <p>${strong}</p>
+            </div>
         </div>
-        <div class="stat-card strong">
-            <div class="stat-label">Strong Match</div>
-            <div class="stat-value">${strong}</div>
-            <div class="stat-desc">skor ≥ 85 pts</div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:var(--store-red-bg);color:var(--store-red);"><span class="material-icons-round">history</span></div>
+            <div class="stat-info">
+                <h4>Run Terakhir</h4>
+                <p style="font-size:16px;">${dateStr}</p>
+            </div>
         </div>
-        <div class="stat-card good">
-            <div class="stat-label">Good Match</div>
-            <div class="stat-value">${good}</div>
-            <div class="stat-desc">skor 75–84 pts</div>
-        </div>
-        <div class="stat-card possible">
-            <div class="stat-label">Possible Match</div>
-            <div class="stat-value">${possible}</div>
-            <div class="stat-desc">skor 60–74 pts</div>
-        </div>
-        <div class="overview-section-title">Info Scraping</div>
-        <div class="stat-card default">
-            <div class="stat-label">Run Terakhir</div>
-            <div class="stat-value" style="font-size:1.1rem;line-height:1.3">${dateStr}</div>
-            <div class="stat-desc">${summaryData.run_id || '—'}</div>
-        </div>
-        <div class="stat-card default">
-            <div class="stat-label">Links Discovered</div>
-            <div class="stat-value">${summaryData.total_links_discovered || 0}</div>
-            <div class="stat-desc">total dari semua sumber</div>
-        </div>
-        <div class="stat-card default">
-            <div class="stat-label">Duplikat Dihapus</div>
-            <div class="stat-value">${summaryData.duplicates_removed || 0}</div>
-            <div class="stat-desc">setelah deduplication</div>
+        
+        <!-- Apply Heatmap -->
+        <div class="heatmap-card">
+            <h3 class="heatmap-title">Aktivitas Melamar</h3>
+            <div class="heatmap-grid" style="display:grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; gap: 4px; overflow-x: auto;">
+                ${heatmapCells}
+            </div>
         </div>
     `;
 
@@ -1018,4 +1072,74 @@ window.editNote = function(id) {
         state.setNote(id, text);
         renderTab(currentTab);
     }
+};
+
+// ===================== COMPARISON MODE =====================
+let compareList = new Set();
+
+window.toggleCompare = function(id) {
+    if (compareList.has(id)) {
+        compareList.delete(id);
+    } else {
+        if (compareList.size >= 3) {
+            alert('Maksimal 3 lowongan untuk dibandingkan.');
+            // uncheck the checkbox
+            document.querySelector(`.compare-checkbox[data-id="${id}"]`).checked = false;
+            return;
+        }
+        compareList.add(id);
+    }
+    
+    const bar = el('comparison-bar');
+    if (compareList.size >= 2) {
+        bar.classList.remove('hidden');
+        el('compare-count').textContent = `${compareList.size} terpilih`;
+    } else {
+        bar.classList.add('hidden');
+    }
+};
+
+el('compare-clear').addEventListener('click', () => {
+    compareList.clear();
+    document.querySelectorAll('.compare-checkbox').forEach(cb => cb.checked = false);
+    el('comparison-bar').classList.add('hidden');
+});
+
+el('compare-btn').addEventListener('click', () => {
+    const jobs = Array.from(compareList).map(id => allJobs.find(j => j._id === id));
+    
+    let thead = '<tr><th>Aspek</th>' + jobs.map(j => `<th>${j.Company}</th>`).join('') + '</tr>';
+    
+    const rows = [
+        ['Posisi', j => j['Job Title']],
+        ['Skor', j => `<strong style="color:var(--store-blue);">${Math.round(j._score)}</strong>`],
+        ['Lokasi', j => j.Location],
+        ['Gaji (AI)', j => j.salary_ai_extracted || '-'],
+        ['Industri', j => {
+            const m = (j['Why Match']||'').match(/Industry match:\s([^;]+)/);
+            return m ? m[1] : '-';
+        }]
+    ];
+    
+    let tbody = rows.map(row => {
+        return `<tr><td style="font-weight:600;">${row[0]}</td>` + 
+               jobs.map(j => `<td>${row[1](j)}</td>`).join('') + 
+               '</tr>';
+    }).join('');
+    
+    el('compare-table-container').innerHTML = `
+        <table style="width:100%; border-collapse: collapse; text-align:left;">
+            <thead style="border-bottom:2px solid var(--store-border);">${thead}</thead>
+            <tbody>${tbody}</tbody>
+        </table>
+        <style>
+            #compare-table-container th, #compare-table-container td { padding: 12px; border-bottom: 1px solid var(--store-border); }
+        </style>
+    `;
+    
+    show('compare-modal');
+});
+
+window.closeCompareModal = function() {
+    hide('compare-modal');
 };

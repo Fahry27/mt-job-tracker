@@ -8,6 +8,7 @@ import time
 import json
 import urllib.request
 import urllib.error
+import socket
 
 PORT = int(os.environ.get('PORT', 8000))
 IS_CLOUD = os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RENDER') or os.environ.get('IS_CLOUD')
@@ -16,6 +17,16 @@ DATA_DIR = os.path.join(DIRECTORY, "data")
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 STATE_FILE = os.path.join(DATA_DIR, "dashboard_state.json")
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
 
 # Import configuration to get Gemini API key
 try:
@@ -29,12 +40,15 @@ except ImportError:
 
 def get_state():
     if not os.path.exists(STATE_FILE):
-        return {"kanban": {}, "hidden": {}}
+        return {"kanban": {}, "hidden": {}, "apply_dates": {}}
     try:
         with open(STATE_FILE, "r") as f:
-            return json.load(f)
+            data = json.load(f)
+            if "apply_dates" not in data:
+                data["apply_dates"] = {}
+            return data
     except:
-        return {"kanban": {}, "hidden": {}}
+        return {"kanban": {}, "hidden": {}, "apply_dates": {}}
 
 def save_state(data):
     with open(STATE_FILE, "w") as f:
@@ -65,6 +79,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             try:
                 state_data = json.loads(post_data.decode('utf-8'))
+                # Auto-record apply_date when job first moves to 'applied'
+                existing = get_state()
+                if "apply_dates" not in state_data:
+                    state_data["apply_dates"] = existing.get("apply_dates", {})
+                new_kanban = state_data.get("kanban", {})
+                old_kanban = existing.get("kanban", {})
+                today = time.strftime("%Y-%m-%d")
+                for job_id, status in new_kanban.items():
+                    if status == "applied" and job_id not in state_data["apply_dates"]:
+                        state_data["apply_dates"][job_id] = today
                 save_state(state_data)
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -269,19 +293,28 @@ if __name__ == "__main__":
     server_thread.start()
     time.sleep(1)
     
+    local_ip = get_local_ip()
+    print("\n" + "━"*52)
+    print("  🚀  MT Job Tracker — SIAP!")
+    print("━"*52)
+    print(f"  💻  MacBook   →  http://localhost:{PORT}/dashboard/")
+    print(f"  📱  HP (WiFi) →  http://{local_ip}:{PORT}/dashboard/")
+    print("━"*52)
+    
     # Auto-start Telegram Bot Agent
     try:
         from telegram_agent import main as telegram_main
         telegram_thread = threading.Thread(target=telegram_main, daemon=True)
         telegram_thread.start()
-        print("🤖 Telegram Agent started in background.")
+        print("  🤖  Telegram  →  Running")
     except Exception as e:
-        print(f"⚠️  Telegram Agent gagal start: {e}")
+        print(f"  ⚠️   Telegram  →  Gagal ({e})")
+    
+    print("━"*52)
+    print("  Tekan Ctrl+C untuk berhenti.\n")
     
     if not IS_CLOUD:
-        url = f"http://localhost:{PORT}/dashboard/"
-        print(f"Opening browser to {url}")
-        webbrowser.open(url)
+        webbrowser.open(f"http://localhost:{PORT}/dashboard/")
     
     try:
         while True:
