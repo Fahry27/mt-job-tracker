@@ -197,6 +197,59 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(500)
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+
+        elif self.path == '/api/generate-resume-tips':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                job_data = json.loads(post_data.decode('utf-8'))
+            except:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b'{"error": "Invalid JSON"}')
+                return
+
+            if not GEMINI_API_KEY:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(b'{"error": "GEMINI_API_KEY belum dikonfigurasi di config/ai.py"}')
+                return
+
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            prompt = f"""
+            Sebagai konsultan karir profesional dan ahli ATS (Applicant Tracking System), tolong berikan 5 bullet points spesifik 
+            yang harus kandidat ini tambahkan ke dalam CV-nya agar lolos seleksi otomatis (ATS) dan mata HRD untuk lowongan ini.
+
+            === PROFIL KANDIDAT ===
+            Nama: {CANDIDATE_PROFILE.get('name')}
+            Pendidikan: {CANDIDATE_PROFILE.get('degree')} dari {CANDIDATE_PROFILE.get('university')}
+            Pengalaman/Proyek: Memiliki latar belakang kuat di Operasional, Supply Chain Management, Logistics, dan Process Improvement.
+            Memiliki pengalaman kewirausahaan yang menunjukkan inisiatif bisnis praktis.
+
+            === POSISI YANG DILAMAR ===
+            Perusahaan: {job_data.get('company')}
+            Posisi: {job_data.get('title')}
+
+            Instruksi:
+            - Berikan 5 poin kalimat pencapaian/pengalaman (bullet points) yang bisa langsung di-copy-paste oleh kandidat ke CV-nya.
+            - Gunakan bahasa yang relevan dengan perusahaan ({job_data.get('company')}).
+            - Jangan bertele-tele, langsung berikan 5 poin tersebut menggunakan Markdown bullet points.
+            """
+            payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.5}}
+            req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
+            try:
+                response = urllib.request.urlopen(req, timeout=30)
+                result = json.loads(response.read().decode('utf-8'))
+                text = result['candidates'][0]['content']['parts'][0]['text']
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"tips": text}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+
         else:
             self.send_response(404)
             self.end_headers()

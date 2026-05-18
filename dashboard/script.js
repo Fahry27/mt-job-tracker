@@ -516,6 +516,43 @@ window.openInterviewPrepModal = function(jobId) {
     });
 };
 
+// ===================== RESUME PREP AI =====================
+window.openResumePrepModal = function(jobId) {
+    const job = allJobs.find(j => j._id === jobId);
+    if (!job) return;
+    
+    show('cover-modal');
+    show('cover-loading');
+    hide('cover-text');
+    hide('cover-footer');
+    
+    // Update modal title
+    const modalTitle = document.querySelector('.modal-header h2');
+    if (modalTitle) modalTitle.textContent = '📄 Bedah CV (ATS)';
+    
+    fetch('/api/generate-resume-tips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: job.Company, title: job['Job Title'] })
+    })
+    .then(r => r.json())
+    .then(data => {
+        hide('cover-loading');
+        if (data.error) {
+            el('cover-text').value = 'Error: ' + data.error;
+        } else {
+            el('cover-text').value = data.tips;
+            show('cover-footer');
+        }
+        show('cover-text');
+    })
+    .catch(() => {
+        hide('cover-loading');
+        show('cover-text');
+        el('cover-text').value = 'Error menghubungkan ke AI Backend.';
+    });
+};
+
 const copyBtn = document.getElementById('copy-cover');
 if(copyBtn) {
     copyBtn.addEventListener('click', () => {
@@ -593,6 +630,7 @@ function buildCard(job, displayRank, isKanban) {
                 ? `<div style="display:flex; gap:6px; flex-wrap:wrap;">
                      <button class="apply-btn chip-ai" style="padding:5px 10px; font-size:12px; width:auto;" onclick="openCoverLetterModal('${id}')">📝 Lamaran</button>
                      <button class="apply-btn" style="padding:5px 10px; font-size:12px; width:auto; border-color:var(--store-orange); color:var(--store-orange);" onclick="openInterviewPrepModal('${id}')">🎤 Interview</button>
+                     <button class="apply-btn" style="padding:5px 10px; font-size:12px; width:auto; border-color:var(--store-green); color:var(--store-green);" onclick="openResumePrepModal('${id}')">📄 Bedah CV</button>
                    </div>`
                 : `<button class="apply-btn${isApplied ? ' applied' : ''}" data-id="${id}">${isApplied ? '✓ Sudah Apply' : 'Tandai Apply'}</button>`
             }
@@ -700,57 +738,158 @@ function renderOverview() {
     show('overview-container');
 }
 
-// ===================== INSIGHTS =====================
+let chartInstances = {};
+
 function renderInsights() {
     const container = el('insights-container');
     
-    if (!insightsData) {
-        container.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center;">
-                <span class="material-icons-round" style="font-size:64px; color:var(--store-text-muted); margin-bottom:16px;">analytics</span>
-                <h3 style="margin-bottom:8px;">Data Insights Belum Tersedia</h3>
-                <p style="color:var(--store-text-muted); max-width:400px;">Jalankan scraper dengan argumen --powerful --use-ai untuk menghasilkan AI Market Insights.</p>
-            </div>
-        `;
-        show('insights-container');
-        return;
-    }
-    
-    let skillsHtml = insightsData.top_skills.map(s => `
-        <div style="display:flex; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--store-border); align-items:center;">
-            <span style="font-weight:600; font-size:15px;">${s.skill}</span>
-            <span class="chip ${s.demand === 'Tinggi' ? 'chip-fire' : 'chip-industry'}">${s.demand}</span>
-        </div>
-    `).join('');
-    
-    container.innerHTML = `
-        <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:24px; margin-top:8px;">
-            <div style="display:flex; flex-direction:column; gap:24px;">
-                <div style="background:var(--store-surface); border-radius:16px; padding:32px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem; display:flex; align-items:center; gap:10px;"><span class="material-icons-round" style="color:var(--store-blue);">trending_up</span> Tren Perekrutan Terkini</h3>
-                    <p style="color:var(--store-text-main); line-height:1.7; font-size:15px; margin:0;">${insightsData.hiring_trend_summary}</p>
-                </div>
-                
-                <div style="background:var(--store-surface); border-radius:16px; padding:32px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem; display:flex; align-items:center; gap:10px;"><span class="material-icons-round" style="color:var(--store-green);">payments</span> Ekspektasi Gaji & Kompensasi</h3>
-                    <p style="color:var(--store-green); font-weight:600; font-size:1.1rem; margin:0;">${insightsData.salary_insights}</p>
+    // Always render charts area
+    let html = `
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:24px;">
+            <div style="background:var(--store-surface); border-radius:16px; padding:24px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin-top:0; font-size:1.1rem; text-align:center;">Status Lamaran (Kanban)</h3>
+                <div style="position:relative; height:250px; width:100%; display:flex; justify-content:center;">
+                    <canvas id="kanbanChart"></canvas>
                 </div>
             </div>
-            
-            <div style="background:var(--store-surface); border-radius:16px; border:1px solid var(--store-border); overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); align-self:start;">
-                <div style="padding:20px 24px; background:var(--store-surface); border-bottom:1px solid var(--store-border);">
-                    <h3 style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;"><span class="material-icons-round" style="color:var(--store-blue); font-size:20px;">model_training</span> Top Skills Diminati</h3>
-                </div>
-                <div style="display:flex; flex-direction:column;">
-                    ${skillsHtml}
+            <div style="background:var(--store-surface); border-radius:16px; padding:24px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <h3 style="margin-top:0; font-size:1.1rem; text-align:center;">Top 5 Industri Dilamar</h3>
+                <div style="position:relative; height:250px; width:100%;">
+                    <canvas id="industryChart"></canvas>
                 </div>
             </div>
         </div>
     `;
+
+    if (!insightsData) {
+        html += `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; background:var(--store-surface); border-radius:16px; border:1px dashed var(--store-border);">
+                <span class="material-icons-round" style="font-size:48px; color:var(--store-text-muted); margin-bottom:16px;">analytics</span>
+                <h3 style="margin-bottom:8px;">AI Market Insights Belum Tersedia</h3>
+                <p style="color:var(--store-text-muted); max-width:400px; font-size:14px;">Jalankan scraper dengan argumen --powerful --use-ai untuk menghasilkan AI Market Insights.</p>
+            </div>
+        `;
+    } else {
+        let skillsHtml = insightsData.top_skills.map(s => `
+            <div style="display:flex; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--store-border); align-items:center;">
+                <span style="font-weight:600; font-size:15px;">${s.skill}</span>
+                <span class="chip ${s.demand === 'Tinggi' ? 'chip-fire' : 'chip-industry'}">${s.demand}</span>
+            </div>
+        `).join('');
+        
+        html += `
+            <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:24px; margin-top:8px;">
+                <div style="display:flex; flex-direction:column; gap:24px;">
+                    <div style="background:var(--store-surface); border-radius:16px; padding:32px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem; display:flex; align-items:center; gap:10px;"><span class="material-icons-round" style="color:var(--store-blue);">trending_up</span> Tren Perekrutan Terkini</h3>
+                        <p style="color:var(--store-text-main); line-height:1.7; font-size:15px; margin:0;">${insightsData.hiring_trend_summary}</p>
+                    </div>
+                    
+                    <div style="background:var(--store-surface); border-radius:16px; padding:32px; border:1px solid var(--store-border); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem; display:flex; align-items:center; gap:10px;"><span class="material-icons-round" style="color:var(--store-green);">payments</span> Ekspektasi Gaji & Kompensasi</h3>
+                        <p style="color:var(--store-green); font-weight:600; font-size:1.1rem; margin:0;">${insightsData.salary_insights}</p>
+                    </div>
+                </div>
+                
+                <div style="background:var(--store-surface); border-radius:16px; border:1px solid var(--store-border); overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); align-self:start;">
+                    <div style="padding:20px 24px; background:var(--store-surface); border-bottom:1px solid var(--store-border);">
+                        <h3 style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;"><span class="material-icons-round" style="color:var(--store-blue); font-size:20px;">model_training</span> Top Skills Diminati</h3>
+                    </div>
+                    <div style="display:flex; flex-direction:column;">
+                        ${skillsHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
     
+    container.innerHTML = html;
     show('insights-container');
+    
+    // Draw charts after DOM is updated
+    setTimeout(drawCharts, 100);
 }
 
+function drawCharts() {
+    if (typeof Chart === 'undefined') return;
+    
+    // Destroy existing charts to prevent overlaps
+    Object.values(chartInstances).forEach(chart => chart.destroy());
+    chartInstances = {};
+
+    // 1. Kanban Doughnut Chart
+    const kanban = state.getKanban();
+    const statusCounts = { applied: 0, assessment: 0, interview: 0, result: 0 };
+    Object.values(kanban).forEach(status => {
+        if (statusCounts[status] !== undefined) statusCounts[status]++;
+    });
+
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDarkMode ? '#e2e8f0' : '#1e293b';
+
+    Chart.defaults.color = textColor;
+    Chart.defaults.font.family = "'Google Sans', sans-serif";
+
+    const kanbanCtx = document.getElementById('kanbanChart');
+    if (kanbanCtx) {
+        chartInstances.kanban = new Chart(kanbanCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Applied', 'Assessment', 'Interview', 'Result'],
+                datasets: [{
+                    data: [statusCounts.applied, statusCounts.assessment, statusCounts.interview, statusCounts.result],
+                    backgroundColor: ['#e2e8f0', '#fef08a', '#93c5fd', '#86efac'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right' } },
+                cutout: '70%'
+            }
+        });
+    }
+
+    // 2. Top Industry Bar Chart
+    const appliedIds = Object.keys(kanban);
+    const appliedJobs = allJobs.filter(j => {
+        const jId = slugify(j.Company + j['Job Title'] + j.Location);
+        return appliedIds.includes(jId);
+    });
+
+    const industryCounts = {};
+    appliedJobs.forEach(j => {
+        const ind = j.Industry || 'Other';
+        industryCounts[ind] = (industryCounts[ind] || 0) + 1;
+    });
+
+    const sortedInd = Object.entries(industryCounts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+    
+    const industryCtx = document.getElementById('industryChart');
+    if (industryCtx) {
+        chartInstances.industry = new Chart(industryCtx, {
+            type: 'bar',
+            data: {
+                labels: sortedInd.map(x => x[0].substring(0, 15) + (x[0].length>15?'...':'')),
+                datasets: [{
+                    label: 'Jumlah Lamaran',
+                    data: sortedInd.map(x => x[1]),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+}
 // ===================== TIMELINE =====================
 function buildTimelineHtml(id) {
     const timeline = state.getTimeline()[id];

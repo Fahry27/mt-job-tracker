@@ -188,6 +188,81 @@ def check_morning_brief(force=False):
                 except Exception as e:
                     print(f"Failed to generate morning brief: {e}")
 
+def check_deadlines(force=False):
+    """Check for high score jobs that are closing within 48 hours and haven't been applied to."""
+    now = time.localtime()
+    if force or now.tm_hour == 17: # Run at 5 PM
+        today_str = time.strftime("%Y-%m-%d")
+        state_file = os.path.join(DIRECTORY, "data", "deadline_alert_state.json")
+        last_sent = ""
+        
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, "r") as f:
+                    last_sent = json.load(f).get("last_sent_date", "")
+            except:
+                pass
+                
+        if force or last_sent != today_str:
+            jobs_path = os.path.join(DIRECTORY, "output", "latest", "jobs_ranked.csv")
+            dashboard_state_file = os.path.join(DIRECTORY, "data", "dashboard_state.json")
+            
+            if os.path.exists(jobs_path):
+                import csv
+                import re
+                
+                # Load Kanban state
+                kanban = {}
+                if os.path.exists(dashboard_state_file):
+                    try:
+                        with open(dashboard_state_file, "r") as f:
+                            kanban = json.load(f).get("kanban", {})
+                    except:
+                        pass
+
+                def slugify(text):
+                    return re.sub(r'[^a-z0-9]', '', str(text).lower())
+
+                urgent_jobs = []
+                try:
+                    with open(jobs_path, "r", encoding="utf-8-sig") as f:
+                        reader = csv.DictReader(f)
+                        for row in reader:
+                            score = float(row.get("Score", 0))
+                            if score < 80: continue
+                            
+                            job_id = slugify(row.get("Company", "") + row.get("Job Title", "") + row.get("Location", ""))
+                            if job_id in kanban: continue # Already applied or in progress
+                            
+                            days_str = row.get("days_until_deadline", "")
+                            try:
+                                days = int(float(days_str))
+                                if 0 <= days <= 2:
+                                    urgent_jobs.append((row, days))
+                            except ValueError:
+                                # Fallback if status is urgent
+                                if row.get("deadline_status") == "Urgent":
+                                    urgent_jobs.append((row, 1))
+
+                    if urgent_jobs:
+                        msg = "⚠️ *Peringatan Tenggat Waktu (Deadline)!*\n\nLowongan prioritas ini akan tutup dalam 1-2 hari. Segera apply!\n\n"
+                        inline_keyboard = []
+                        
+                        for idx, (job, days) in enumerate(urgent_jobs[:5], 1):
+                            msg += f"{idx}. *{job.get('Job Title')}* @ {job.get('Company')}\n"
+                            msg += f"   🎯 Score: {job.get('Score')} | ⏳ Sisa: {days} Hari\n\n"
+                            
+                            if job.get('Link') and job.get('Link') != 'Tidak tercantum':
+                                inline_keyboard.append([{"text": f"🔗 Apply {job.get('Company')}", "url": job.get('Link')}])
+                        
+                        reply_markup = {"inline_keyboard": inline_keyboard} if inline_keyboard else None
+                        send_message(TELEGRAM_CHAT_ID, msg, reply_markup=reply_markup)
+                        
+                        with open(state_file, "w") as f:
+                            json.dump({"last_sent_date": today_str}, f)
+                except Exception as e:
+                    print(f"Failed to check deadlines: {e}")
+
 def main():
     print("🤖 Telegram Agent started. Listening for commands...")
     offset = None
@@ -217,6 +292,7 @@ def main():
             # Check proactive tasks every polling cycle
             check_reminders()
             check_morning_brief()
+            check_deadlines()
             
         except requests.exceptions.RequestException:
             time.sleep(5)
