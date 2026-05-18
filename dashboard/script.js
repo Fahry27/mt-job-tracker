@@ -231,7 +231,8 @@ async function fetchData() {
                     ...j,
                     _score: parseFloat(j.Score || j['match_score'] || 0),
                     _isApplyToday: !j['not_apply_today_reason'] || j['not_apply_today_reason'].trim() === '',
-                    _id: slugify((j.Company || '') + (j['Job Title'] || '') + (j.Location || ''))
+                    _id: slugify((j.Company || '') + (j['Job Title'] || '') + (j.Location || '')),
+                    _id_alt: slugify((j['Job Title'] || '') + (j.Company || '') + (j.Location || ''))
                 }));
                 initUI();
             },
@@ -392,7 +393,7 @@ function renderKanban() {
     
     Object.keys(kanbanData).forEach(id => {
         const status = kanbanData[id];
-        const job = allJobs.find(j => j._id === id);
+        const job = allJobs.find(j => j._id === id || j._id_alt === id);
         if (job) {
             const card = buildCard(job, 0, true);
             const col = document.querySelector(`.kanban-column[data-status="${status}"] .kanban-cards`);
