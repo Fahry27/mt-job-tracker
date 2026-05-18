@@ -13,9 +13,12 @@ if not TELEGRAM_BOT_TOKEN:
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
-def send_message(chat_id, text):
+def send_message(chat_id, text, reply_markup=None, parse_mode="Markdown"):
     try:
-        requests.post(f"{BASE_URL}/sendMessage", json={"chat_id": chat_id, "text": text})
+        payload = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode}
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+        requests.post(f"{BASE_URL}/sendMessage", json=payload)
     except Exception as e:
         print("Failed to send message:", e)
 
@@ -156,17 +159,20 @@ def check_morning_brief():
                         jobs.sort(key=lambda x: x[1], reverse=True)
                         top_3 = jobs[:3]
                         
-                        msg = "🌅 **Top 3 Lowongan MT Terbaik Hari Ini** 🌅\n\n"
+                        msg = "🌅 *Top 3 Lowongan MT Terbaik Hari Ini* 🌅\n\n"
+                        inline_keyboard = []
+                        
                         for idx, (job, score) in enumerate(top_3, 1):
-                            msg += f"{idx}. **{job.get('Job Title')}** @ {job.get('Company')}\n"
+                            msg += f"{idx}. *{job.get('Job Title')}* @ {job.get('Company')}\n"
                             msg += f"   🎯 Score: {score}\n"
-                            msg += f"   📍 Lokasi: {job.get('Location')}\n"
-                            if job.get('Link') and job.get('Link') != 'Tidak tercantum':
-                                msg += f"   🔗 [Apply Disini]({job.get('Link')})\n"
-                            msg += "\n"
+                            msg += f"   📍 Lokasi: {job.get('Location')}\n\n"
                             
-                        msg += "Semangat apply hari ini! 💪 Buka dashboard untuk info lengkap."
-                        send_message(TELEGRAM_CHAT_ID, msg)
+                            if job.get('Link') and job.get('Link') != 'Tidak tercantum':
+                                inline_keyboard.append([{"text": f"🔗 Apply: {job.get('Company')}", "url": job.get('Link')}])
+                            
+                        msg += "Semangat apply hari ini! 💪"
+                        reply_markup = {"inline_keyboard": inline_keyboard} if inline_keyboard else None
+                        send_message(TELEGRAM_CHAT_ID, msg, reply_markup=reply_markup)
                         
                         # Save state
                         with open(state_file, "w") as f:

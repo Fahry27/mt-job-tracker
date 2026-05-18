@@ -12,11 +12,12 @@ let currentTab = 'apply-today';
 let currentCoverJob = null; 
 let insightsData = null; 
 
-let serverState = { kanban: {}, hidden: {} };
+let serverState = { kanban: {}, hidden: {}, notes: {} };
 
 const state = {
     getKanban() { return serverState.kanban || {}; },
     getHidden() { return serverState.hidden || {}; },
+    getNotes() { return serverState.notes || {}; },
     
     setKanban(obj) {
         serverState.kanban = obj;
@@ -26,6 +27,13 @@ const state = {
         serverState.hidden = obj;
         this.sync();
     },
+    setNote(id, text) {
+        if (!serverState.notes) serverState.notes = {};
+        if (!text) delete serverState.notes[id];
+        else serverState.notes[id] = text;
+        this.sync();
+    },
+    
     sync() {
         fetch('/api/state', {
             method: 'POST',
@@ -121,7 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===================== DARK MODE =====================
 function setupTheme() {
-    const saved = localStorage.getItem('mt_theme') || 'light';
+    let saved = localStorage.getItem('mt_theme');
+    if (!saved) {
+        saved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        localStorage.setItem('mt_theme', saved);
+    }
+    
     if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     updateThemeIcon(saved);
 
@@ -856,3 +869,12 @@ async function loadCompanyLogo(companyName, imgEl, initialsEl) {
         logoCache[query] = 'failed';
     }
 }
+
+window.editNote = function(id) {
+    const current = state.getNotes()[id] || '';
+    const text = prompt('Catatan Pribadi untuk lowongan ini:', current);
+    if (text !== null) {
+        state.setNote(id, text);
+        renderTab(currentTab);
+    }
+};
