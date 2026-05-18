@@ -24,7 +24,7 @@ def sync_to_sheets():
         
         # Open or create sheet
         try:
-            sheet = client.open(SHEET_NAME).sheet1
+            sheet = client.open_by_key("1dbbtGhqDMpxuIRUYm-1qS7ctAxP0PA9f_Q1COFuPcN8").sheet1
         except gspread.exceptions.SpreadsheetNotFound:
             print(f"[{__file__}] Sheet '{SHEET_NAME}' not found. Please create it or change SHEET_NAME.")
             return
@@ -64,7 +64,7 @@ def sync_to_sheets():
         # Update sheet
         if rows:
             sheet.clear()
-            sheet.update('A1', rows)
+            sheet.update(values=rows, range_name='A1')
             print(f"[{__file__}] Successfully synced {len(rows)-1} jobs to Google Sheets.")
             
     except Exception as e:
