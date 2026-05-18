@@ -221,8 +221,8 @@ body::before {
 }
 .nav-item.active .nav-badge,
 .nav-item.active .nav-badge.muted {
-    background: var(--store-blue);
-    color: #ffffff;
+    background: var(--store-blue) !important;
+    color: #ffffff !important;
 }
 .nav-badge.muted {
     background: var(--store-border);
