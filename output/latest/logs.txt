@@ -1,18 +1,18 @@
-[2026-05-19 07:03:44] ============================================================
-[2026-05-19 07:03:44]   MT JOB SCRAPER & MATCHER v4.0 - Mode: POWERFUL_FULL_RUN
-[2026-05-19 07:03:44]   Unified Mode: False
-[2026-05-19 07:03:44]   Run ID: 20260519_070344
-[2026-05-19 07:03:44]   Output Folder: output/2026-05-19_07-03-44
-[2026-05-19 07:03:44] ============================================================
+[2026-05-19 07:04:59] ============================================================
+[2026-05-19 07:04:59]   MT JOB SCRAPER & MATCHER v4.0 - Mode: POWERFUL_FULL_RUN
+[2026-05-19 07:04:59]   Unified Mode: False
+[2026-05-19 07:04:59]   Run ID: 20260519_070459
+[2026-05-19 07:04:59]   Output Folder: output/2026-05-19_07-04-59
+[2026-05-19 07:04:59] ============================================================
 
-[2026-05-19 07:03:45] >>> Discovering: Disnakerja - Management Trainee
-[2026-05-19 07:03:53] >>> Discovering: Disnakerja - Management Trainee Page 2
-[2026-05-19 07:04:00] 
+[2026-05-19 07:05:00] >>> Discovering: Disnakerja - Management Trainee
+[2026-05-19 07:05:07] >>> Discovering: Disnakerja - Management Trainee Page 2
+[2026-05-19 07:05:14] 
 [DETAIL MODE] Scrapping details for 24 new links...
-[2026-05-19 07:04:00] Merged Total: 0
-[2026-05-19 07:04:00] Duplicates Removed: 0
-[2026-05-19 07:04:00] Unique Jobs to Rank: 0
-[2026-05-19 07:04:00] Re-scoring all combined jobs...
-[2026-05-19 07:04:00] Running AI Semantic Matching on top jobs (Score >= 60)...
-[2026-05-19 07:04:00] Running deadline audit on all jobs...
-[2026-05-19 07:04:00] Exporting results to output/2026-05-19_07-03-44...
+[2026-05-19 07:05:46] Merged Total: 24
+[2026-05-19 07:05:46] Duplicates Removed: 0
+[2026-05-19 07:05:46] Unique Jobs to Rank: 24
+[2026-05-19 07:05:46] Re-scoring all combined jobs...
+[2026-05-19 07:05:46] Running AI Semantic Matching on top jobs (Score >= 60)...
+[2026-05-19 07:05:46] Running deadline audit on all jobs...
+[2026-05-19 07:05:46] Exporting results to output/2026-05-19_07-04-59...
