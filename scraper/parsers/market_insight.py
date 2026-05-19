@@ -23,10 +23,10 @@ def generate_market_insights(jobs_list, output_dir):
     
     text_data = ""
     for j in sample_jobs:
-        text_data += f"Title: {j.get('Job Title')}\n"
-        text_data += f"Company: {j.get('Company')}\n"
-        text_data += f"Desc: {str(j.get('Description', ''))[:400]}\n"
-        text_data += f"Req: {str(j.get('Requirements', ''))[:400]}\n---\n"
+        text_data += f"Title: {j.get('job_title') or j.get('Job Title', '')}\n"
+        text_data += f"Company: {j.get('company') or j.get('Company', '')}\n"
+        text_data += f"Desc: {str(j.get('description') or j.get('job_description_summary') or j.get('Description', ''))[:400]}\n"
+        text_data += f"Req: {str(j.get('requirements') or j.get('Requirements', ''))[:400]}\n---\n"
         
     prompt = f"""
     You are an expert HR Data Analyst. Analyze the following Management Trainee job postings in Indonesia.

@@ -367,7 +367,7 @@ def main():
                         text = message.get("text", "")
                         chat_id = message.get("chat", {}).get("id")
                         
-                        if text and text.startswith("/") and str(chat_id) == str(TELEGRAM_CHAT_ID):
+                        if text and str(chat_id) == str(TELEGRAM_CHAT_ID):
                             print(f"Received command: {text}")
                             process_command(text, chat_id)
             

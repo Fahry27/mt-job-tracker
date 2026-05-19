@@ -10,7 +10,8 @@ let allJobs = [];
 let summaryData = {};
 let currentTab = 'apply-today';
 let currentCoverJob = null; 
-let insightsData = null; 
+let insightsData = null;
+let currentRunId = null;
 
 let serverState = { kanban: {}, hidden: {}, notes: {}, historical_jobs: {} };
 
@@ -180,6 +181,14 @@ function setupExport() {
         if (currentTab !== 'tracker') switchTab('tracker');
         setTimeout(() => window.print(), 300);
     });
+    document.getElementById('export-csv')?.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.href = '../output/latest/apply_today.csv';
+        link.download = 'apply_today.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
 }
 
 // ===================== TABS =====================
@@ -206,6 +215,7 @@ function setupSearch() {
     document.getElementById('score-filter').addEventListener('change', renderTab);
     if(document.getElementById('location-filter')) document.getElementById('location-filter').addEventListener('change', renderTab);
     if(document.getElementById('industry-filter')) document.getElementById('industry-filter').addEventListener('change', renderTab);
+    if(document.getElementById('company-type-filter')) document.getElementById('company-type-filter').addEventListener('change', renderTab);
 }
 
 // ===================== FETCH DATA =====================
@@ -267,12 +277,88 @@ async function fetchData() {
     }
 }
 
+// ===================== AUTO-REFRESH POLLING =====================
+function startAutoRefresh() {
+    setInterval(async () => {
+        try {
+            const res = await fetch('../output/latest/run_summary.json');
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.run_id && data.run_id !== currentRunId) {
+                currentRunId = data.run_id;
+                showToast('🔄 Data baru terdeteksi — memuat ulang...');
+                await fetchData();
+            }
+        } catch(e) {}
+    }, 5 * 60 * 1000); // 5 minutes
+}
+
+function showToast(msg) {
+    let toast = document.getElementById('auto-refresh-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'auto-refresh-toast';
+        toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--store-accent);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;z-index:9999;opacity:0;transition:opacity 0.3s;box-shadow:0 4px 20px rgba(0,0,0,0.2);';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 4000);
+}
+
+// ===================== COMPANY TYPE CLASSIFIER =====================
+const BUMN_KEYWORDS = ['bumn', 'bank bri', 'bank bni', 'bank mandiri', 'bank btn', 'bank btpn', 'bca', 'pln', 'pertamina', 'telkom', 'telkomsel', 'garuda indonesia', 'antam', 'jasa raharja', 'pos indonesia', 'pegadaian', 'bulog', 'biofarma', 'krakatau steel', 'inalum', 'hutama karya', 'waskita', 'adhi karya', 'wijaya karya', 'pupuk indonesia', 'semen indonesia', 'inti', 'pelni', 'pelindo', 'angkasa pura', 'kimia farma', 'mandiri', 'bri', 'bni'];
+const MNC_KEYWORDS = ['unilever', 'nestle', 'nestlé', 'coca-cola', 'coca cola', 'loreal', "l'oreal", 'procter', 'p&g', 'johnson', 'danone', 'schneider', 'siemens', 'samsung', 'lg electronics', 'toyota', 'honda', 'mitsubishi', 'panasonic', '3m', 'abbott', 'pfizer', 'microsoft', 'google', 'amazon', 'apple', 'intel', 'ibm', 'accenture', 'deloitte', 'kpmg', 'pwc', 'ernst', 'ey ', 'mckinsey', 'bcg', 'bain', 'hsbc', 'standard chartered', 'citibank', 'jpmorgan', 'shell', 'bp ', 'total energies', 'chevron', 'mondelez', 'kraft', 'heinz', 'colgate', 'reckitt', 'astra international'];
+
+function classifyCompanyType(name) {
+    if (!name) return 'Swasta';
+    const lower = name.toLowerCase();
+    for (const kw of BUMN_KEYWORDS) {
+        if (lower.includes(kw)) return 'BUMN';
+    }
+    for (const kw of MNC_KEYWORDS) {
+        if (lower.includes(kw)) return 'Multinasional';
+    }
+    // Check enrichment data
+    return 'Swasta';
+}
+
+// ===================== BROWSER NOTIFICATION =====================
+function checkBrowserNotification() {
+    if (!('Notification' in window)) return;
+    const lastNotifiedRun = localStorage.getItem('mt_last_notified_run');
+    if (lastNotifiedRun === currentRunId) return; // Already notified
+    
+    const applyTodayJobs = allJobs.filter(isApplyToday);
+    if (applyTodayJobs.length === 0) return;
+    
+    if (Notification.permission === 'granted') {
+        new Notification('MT Job Tracker 🚀', {
+            body: `${applyTodayJobs.length} rekomendasi apply today tersedia! Top: ${applyTodayJobs[0]?.Company || 'Job baru'}`,
+            tag: 'mt-tracker-update'
+        });
+        localStorage.setItem('mt_last_notified_run', currentRunId);
+    } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(perm => {
+            if (perm === 'granted') checkBrowserNotification();
+        });
+    }
+}
+
 // ===================== INIT UI =====================
 function initUI() {
     hide('loading-state');
     const d = new Date(summaryData.finished_at || Date.now());
     const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     if(el('run-date-sidebar')) el('run-date-sidebar').textContent = 'Pembaruan: ' + dateStr;
+
+    // Save run_id for auto-refresh
+    currentRunId = summaryData.run_id || null;
+
+    // Add company type classification
+    allJobs.forEach(j => {
+        j._companyType = j.company_type || classifyCompanyType(j.Company);
+    });
 
     const applyTodayJobs = allJobs.filter(isApplyToday);
     if(el('all-count')) el('all-count').textContent = allJobs.length;
@@ -282,6 +368,12 @@ function initUI() {
     initCustomDropdowns();
     renderTab();
     updateAppliedBadge();
+
+    // Start auto-refresh polling
+    startAutoRefresh();
+
+    // Browser notification for new data
+    checkBrowserNotification();
 
     // Auto-hide header on scroll down, show on scroll up
     let lastScrollY = window.scrollY;
@@ -349,6 +441,7 @@ function renderTab() {
     const minScore = parseInt(el('score-filter').value || '0');
     const locationQuery = (el('location-filter') ? el('location-filter').value.toLowerCase() : '');
     const industryQuery = (el('industry-filter') ? el('industry-filter').value.toLowerCase() : '');
+    const companyTypeQuery = (el('company-type-filter') ? el('company-type-filter').value : '');
 
     const titles = {
         'apply-today': ['Rekomendasi Hari Ini', 'Lowongan terbaik yang sesuai dengan profil Anda'],
@@ -406,6 +499,10 @@ function renderTab() {
             return indMatch && indMatch[1].toLowerCase().includes(industryQuery);
         });
     }
+    
+    if (companyTypeQuery) {
+        jobs = jobs.filter(j => j._companyType === companyTypeQuery);
+    }
 
     jobs = [...jobs].sort((a, b) => b._score - a._score || parseInt(a.Rank) - parseInt(b.Rank));
     updateSummaryBar(jobs, currentTab);
@@ -437,6 +534,7 @@ function renderKanban() {
     const minScore = parseInt(el('score-filter')?.value || '0');
     const locationQuery = (el('location-filter') ? el('location-filter').value.toLowerCase().trim() : '');
     const industryQuery = (el('industry-filter') ? el('industry-filter').value.toLowerCase().trim() : '');
+    const companyTypeQuery = (el('company-type-filter') ? el('company-type-filter').value : '');
     
     Object.keys(kanbanData).forEach(id => {
         const status = kanbanData[id];
@@ -461,6 +559,11 @@ function renderKanban() {
             // 4. Industry Filter
             if (industryQuery) {
                 if (!(job['Why Match'] || '').toLowerCase().includes(industryQuery)) return;
+            }
+            // 5. Company Type Filter
+            if (companyTypeQuery) {
+                const jobType = job._companyType || classifyCompanyType(job.Company);
+                if (jobType !== companyTypeQuery) return;
             }
 
             const card = buildCard(job, 0, true);

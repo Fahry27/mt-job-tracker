@@ -18,7 +18,7 @@ CORE_SOURCES = [
 OPTIONAL_DISCOVERY_SOURCES = [
     {"source_name": "JobStreet - Management Trainee", "url": "https://id.jobstreet.com/management-trainee-jobs", "priority": 3, "source_type": "large_job_board"},
     {"source_name": "JobStreet - Fresh Graduate Management Trainee", "url": "https://id.jobstreet.com/id/fresh-graduate-management-trainee-jobs", "priority": 3, "source_type": "large_job_board"},
-    {"source_name": "Indeed Indonesia - Fresh Graduate MT", "url": "https://id.indeed.com/lowongan-kerja-Fresh-Graduate%2C-Bumn%2C-Management-Trainee", "priority": 3, "source_type": "large_job_board"},
+    {"source_name": "Indeed Indonesia - Fresh Graduate MT", "url": "https://id.indeed.com/rss?q=management+trainee+fresh+graduate&l=Indonesia", "priority": 3, "source_type": "rss_feed"},
     {"source_name": "Loker.id - Management Trainee", "url": "https://www.loker.id/fungsi/management-trainee", "priority": 3, "source_type": "job_board"},
     {"source_name": "Jooble Indonesia - Management Trainee", "url": "https://id.jooble.org/lowongan-kerja-management-trainee", "priority": 3, "source_type": "aggregator"}
 ]

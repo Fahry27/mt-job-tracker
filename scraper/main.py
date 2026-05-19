@@ -21,6 +21,7 @@ from scraper.exporters.csv_exporter import export_to_csv, export_apply_today, ge
 from scraper.notifier import notify_high_matches
 from scraper.parsers.ai_matcher import analyze_job_with_ai
 from scraper.parsers.market_insight import generate_market_insights
+from scraper.parsers.web_enricher import enrich_jobs
 
 CACHE_FILE = "cache/discovered_jobs.json"
 
@@ -595,6 +596,14 @@ async def main_async():
         _write_powerful_rec_summary(ranked_jobs, at_jobs, run_dir, summary, gpa_counts, dl_dist, urg_dist)
     else:
         generate_recommendation_summary(ranked_jobs, run_dir, summary)
+
+    # Enrich low-confidence jobs with AI metadata
+    if getattr(args, 'use_ai', False):
+        ranked_jobs = enrich_jobs(ranked_jobs)
+
+    # Generate AI Market Insights if requested
+    if getattr(args, 'use_ai', False):
+        generate_market_insights(ranked_jobs, run_dir)
 
     # 6. Update Latest
     _update_latest(args.output_dir, run_dir)

@@ -1,30 +1,18 @@
-[2026-05-18 06:35:01] ============================================================
-[2026-05-18 06:35:01]   MT JOB SCRAPER & MATCHER v4.0 - Mode: POWERFUL_FULL_RUN
-[2026-05-18 06:35:01]   Unified Mode: False
-[2026-05-18 06:35:01]   Run ID: 20260518_063501
-[2026-05-18 06:35:01]   Output Folder: output/2026-05-18_06-35-01
-[2026-05-18 06:35:01] ============================================================
+[2026-05-19 07:03:44] ============================================================
+[2026-05-19 07:03:44]   MT JOB SCRAPER & MATCHER v4.0 - Mode: POWERFUL_FULL_RUN
+[2026-05-19 07:03:44]   Unified Mode: False
+[2026-05-19 07:03:44]   Run ID: 20260519_070344
+[2026-05-19 07:03:44]   Output Folder: output/2026-05-19_07-03-44
+[2026-05-19 07:03:44] ============================================================
 
-[2026-05-18 06:35:02] >>> Discovering: Disnakerja - Management Trainee
-[2026-05-18 06:37:47] >>> Discovering: Disnakerja - Management Trainee Page 2
-[2026-05-18 06:40:32] >>> Discovering: Disnakerja - MT Blog
-[2026-05-18 06:43:17] >>> Discovering: Disnakerja - Jobs
-[2026-05-18 06:46:02] >>> Discovering: LokerBumn - Management Trainee
-[2026-05-18 06:46:10] >>> Discovering: LokerBumn - Officer Development Program
-[2026-05-18 06:46:17] >>> Discovering: LokerBumn - Fresh Graduate
-[2026-05-18 06:46:22] >>> Discovering: Gokerja - Management Trainee
-[2026-05-18 06:46:30] >>> Discovering: Gokerja - Fresh Graduate
-[2026-05-18 06:46:36] >>> Discovering: Gokerja - Homepage
-[2026-05-18 06:46:42] >>> Discovering: Bukajobs - Management Trainee
-[2026-05-18 06:46:45] >>> Discovering: Bukajobs - Loker S1
-[2026-05-18 06:46:48] >>> Discovering: Prosple Indonesia
-[2026-05-18 06:46:51] >>> Discovering: Prosple Indonesia - Search Jobs
-[2026-05-18 06:46:54] 
-[DETAIL MODE] Scrapping details for 136 new links...
-[2026-05-18 06:49:53] Merged Total: 136
-[2026-05-18 06:49:53] Duplicates Removed: 61
-[2026-05-18 06:49:53] Unique Jobs to Rank: 75
-[2026-05-18 06:49:53] Re-scoring all combined jobs...
-[2026-05-18 06:49:53] Running AI Semantic Matching on top jobs (Score >= 60)...
-[2026-05-18 06:52:42] Running deadline audit on all jobs...
-[2026-05-18 06:52:42] Exporting results to output/2026-05-18_06-35-01...
+[2026-05-19 07:03:45] >>> Discovering: Disnakerja - Management Trainee
+[2026-05-19 07:03:53] >>> Discovering: Disnakerja - Management Trainee Page 2
+[2026-05-19 07:04:00] 
+[DETAIL MODE] Scrapping details for 24 new links...
+[2026-05-19 07:04:00] Merged Total: 0
+[2026-05-19 07:04:00] Duplicates Removed: 0
+[2026-05-19 07:04:00] Unique Jobs to Rank: 0
+[2026-05-19 07:04:00] Re-scoring all combined jobs...
+[2026-05-19 07:04:00] Running AI Semantic Matching on top jobs (Score >= 60)...
+[2026-05-19 07:04:00] Running deadline audit on all jobs...
+[2026-05-19 07:04:00] Exporting results to output/2026-05-19_07-03-44...

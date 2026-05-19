@@ -1,6 +1,23 @@
 import requests
 import json
 import time
+import os
+from datetime import datetime, timedelta
+
+AI_CACHE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "cache", "ai_analyzed_cache.json")
+
+def _load_ai_cache():
+    if os.path.exists(AI_CACHE_FILE):
+        try:
+            with open(AI_CACHE_FILE, "r") as f:
+                return json.load(f)
+        except: pass
+    return {}
+
+def _save_ai_cache(cache):
+    os.makedirs(os.path.dirname(AI_CACHE_FILE), exist_ok=True)
+    with open(AI_CACHE_FILE, "w") as f:
+        json.dump(cache, f, indent=2)
 
 try:
     from config.ai import GEMINI_API_KEY
@@ -18,11 +35,28 @@ except ImportError:
 def analyze_job_with_ai(job):
     """
     Menggunakan Gemini API untuk melakukan semantic matching
-    dan ekstraksi gaji.
+    dan ekstraksi gaji. Results cached for 7 days.
     """
     if not GEMINI_API_KEY:
         print("    ! GEMINI_API_KEY tidak diatur. Melewati AI Matching.")
         return job
+
+    # Check cache first (7-day TTL)
+    job_url = job.get("job_url", "")
+    cache = _load_ai_cache()
+    if job_url and job_url in cache:
+        cached = cache[job_url]
+        cached_time = datetime.fromisoformat(cached.get("timestamp", "2000-01-01"))
+        if datetime.now() - cached_time < timedelta(days=7):
+            # Apply cached results
+            base_score = float(job.get("match_score", 0))
+            job["match_score"] = round((base_score * 0.4) + (cached["semantic_score"] * 0.6), 1)
+            if cached.get("reasoning"):
+                job["why_match"] = f"[AI·cached] {cached['reasoning']} | {job.get('why_match', '')}"
+            if cached.get("salary"):
+                job["salary_ai_extracted"] = cached["salary"]
+            print(f"    [AI·cache] {job.get('company')} - {job.get('job_title')} (cached score: {cached['semantic_score']})")
+            return job
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
     
@@ -100,8 +134,20 @@ def analyze_job_with_ai(job):
                 job["why_match"] = f"[AI] {reasoning} | {old_why}"
                 
             # Update gaji jika ada
+            salary_str = ""
             if ai_data.get("estimated_salary_min") or ai_data.get("estimated_salary_max"):
-                job["salary_ai_extracted"] = f"Rp{ai_data.get('estimated_salary_min')} - Rp{ai_data.get('estimated_salary_max')}"
+                salary_str = f"Rp{ai_data.get('estimated_salary_min')} - Rp{ai_data.get('estimated_salary_max')}"
+                job["salary_ai_extracted"] = salary_str
+            
+            # Save to cache
+            if job_url:
+                cache[job_url] = {
+                    "semantic_score": ai_score,
+                    "reasoning": reasoning,
+                    "salary": salary_str,
+                    "timestamp": datetime.now().isoformat()
+                }
+                _save_ai_cache(cache)
                 
             return job
         else:

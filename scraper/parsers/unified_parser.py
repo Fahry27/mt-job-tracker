@@ -15,6 +15,7 @@ try:
     from scraper.parsers.json_ld_parser import extract_json_ld
     from scraper.parsers.sites.parser_factory import ParserFactory
     from scraper.parsers.llm_fallback import parse_with_llm
+    from scraper.parsers.sites.rss_parser import parse_rss_feed
 except ImportError:
     import sys
     import os
@@ -23,8 +24,10 @@ except ImportError:
     from scraper.parsers.json_ld_parser import extract_json_ld
     from scraper.parsers.sites.parser_factory import ParserFactory
     from scraper.parsers.llm_fallback import parse_with_llm
+    from scraper.parsers.sites.rss_parser import parse_rss_feed
 
 URL_CACHE_FILE = "cache/scraped_urls.json"
+SOURCE_HEALTH_FILE = "cache/source_health.json"
 USER_AGENT = "FahryJobMatcher/1.0 (+personal local scraper)"
 
 class UnifiedScraper:
@@ -38,6 +41,7 @@ class UnifiedScraper:
         self.url_cache = self._load_url_cache()
         self.proxies = proxies or []
         self.current_proxy = None
+        self.source_health = self._load_source_health()
 
     async def start(self):
         self.playwright = await async_playwright().start()
@@ -62,6 +66,7 @@ class UnifiedScraper:
         if self.browser: await self.browser.close()
         if self.playwright: await self.playwright.stop()
         self._save_url_cache()
+        self._finalize_source_health()
 
     def _load_url_cache(self):
         if os.path.exists(URL_CACHE_FILE):
@@ -75,6 +80,42 @@ class UnifiedScraper:
         os.makedirs(os.path.dirname(URL_CACHE_FILE), exist_ok=True)
         with open(URL_CACHE_FILE, "w") as f:
             json.dump(self.url_cache, f, indent=2)
+
+    def _load_source_health(self):
+        if os.path.exists(SOURCE_HEALTH_FILE):
+            try:
+                with open(SOURCE_HEALTH_FILE, "r") as f:
+                    return json.load(f)
+            except: return {}
+        return {}
+
+    def _track_source(self, domain, success):
+        if domain not in self.source_health:
+            self.source_health[domain] = {"errors": 0, "total": 0, "blocked": False}
+        self.source_health[domain]["total"] += 1
+        if not success:
+            self.source_health[domain]["errors"] += 1
+
+    def _is_source_blocked(self, url):
+        domain = "/".join(url.split("/")[:3])
+        health = self.source_health.get(domain, {})
+        if health.get("blocked"):
+            print(f"      ⚠️ Skipping {domain} (auto-blacklisted: >{health.get('errors',0)}/{health.get('total',0)} errors)")
+            return True
+        return False
+
+    def _finalize_source_health(self):
+        for domain, data in self.source_health.items():
+            total = data.get("total", 0)
+            errors = data.get("errors", 0)
+            if total >= 3 and errors / total > 0.8:
+                data["blocked"] = True
+                print(f"    ⛔ Auto-blacklisted: {domain} ({errors}/{total} errors)")
+            elif total >= 3 and errors / total < 0.3:
+                data["blocked"] = False  # Rehabilitate if improved
+        os.makedirs(os.path.dirname(SOURCE_HEALTH_FILE), exist_ok=True)
+        with open(SOURCE_HEALTH_FILE, "w") as f:
+            json.dump(self.source_health, f, indent=2)
 
     def is_url_scraped_recently(self, url):
         if url in self.url_cache:
@@ -105,6 +146,10 @@ class UnifiedScraper:
         return rp.can_fetch(USER_AGENT, url)
 
     async def get_content(self, url, retry_limit=2):
+        # Check source blacklist first
+        if self._is_source_blocked(url):
+            return None
+
         if not await self.can_fetch(url):
             print(f"      ! Blocked by robots.txt: {url}")
             return None
@@ -126,6 +171,7 @@ class UnifiedScraper:
         page.on("response", handle_response)
         
         content = None
+        domain_key = "/".join(url.split("/")[:3])
         for attempt in range(retry_limit + 1):
             try:
                 response = await page.goto(url, wait_until="domcontentloaded", timeout=self.timeout)
@@ -134,12 +180,16 @@ class UnifiedScraper:
                 status = response.status
                 if status in [429, 503]:
                     print(f"      ! HTTP {status} - Backing off... (Proxy: {self.current_proxy or 'Direct'})")
+                    self._track_source(domain_key, False)
                     await asyncio.sleep(10 * (attempt + 1))
                     continue
                 
                 if status >= 400:
                     print(f"      ! HTTP {status} for {url}")
+                    self._track_source(domain_key, False)
                     break
+
+                self._track_source(domain_key, True)
 
                 await asyncio.sleep(random.uniform(2, 4))
                 content = await page.content()
@@ -159,6 +209,11 @@ class UnifiedScraper:
         source_type = source_config["source_type"]
 
         print(f"    -> Discovering links from {source_name}...")
+
+        # RSS Feed sources — no Playwright needed
+        if source_type == "rss_feed":
+            rss_links = parse_rss_feed(url, source_name, limit=limit)
+            return rss_links
 
         all_links = []
         seen = set()

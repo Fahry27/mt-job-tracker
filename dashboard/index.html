@@ -47,6 +47,9 @@
                         <span class="material-icons-round search-icon">search</span>
                         <input type="text" id="search-input" placeholder="Cari posisi atau perusahaan">
                     </div>
+                    <button class="export-btn" id="export-csv" title="Download Apply Today CSV">
+                        <span class="material-icons-round">download</span> CSV
+                    </button>
                     <button class="export-btn" id="export-kanban" title="Export Kanban ke PDF">
                         <span class="material-icons-round">picture_as_pdf</span> Export
                     </button>
@@ -68,6 +71,12 @@
                         <span class="material-icons-round">history</span>
                         <span id="run-date-sidebar">Loading...</span>
                     </div>
+                    <select id="company-type-filter" class="store-select">
+                        <option value="">Semua Jenis</option>
+                        <option value="BUMN">BUMN</option>
+                        <option value="Swasta">Swasta</option>
+                        <option value="Multinasional">Multinasional</option>
+                    </select>
                     <select id="industry-filter" class="store-select">
                         <option value="">Semua Industri</option>
                     </select>

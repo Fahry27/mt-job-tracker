@@ -1,21 +1,28 @@
 #!/bin/bash
 
 # MT Job Tracker Auto-Run Script
-# Digunakan untuk eksekusi via cron job
+# Digunakan untuk eksekusi via cron job / macOS LaunchAgent
+# Schedule: setiap hari pukul 07:00 WIB
 
 # Pindah ke direktori proyek
 cd "/Users/fahry/Desktop/CLAUDE \"MT\" copy 2" || exit
 
-# Jika ada file log lama, pindahkan (opsional, untuk mencegah log terlalu besar)
-# mv cron_log.txt cron_log_old.txt
+LOG="cron_log.txt"
 
-echo "========================================"
-echo "Memulai Auto-Run pada: $(date)"
-echo "========================================"
+echo "========================================" >> "$LOG"
+echo "Memulai Auto-Run pada: $(date)" >> "$LOG"
+echo "========================================" >> "$LOG"
 
-# Jalankan scraper mode powerful
-python3 scraper/main.py --powerful
+# Jalankan scraper mode powerful dengan AI
+python3 scraper/main.py --mode all --include-optional --powerful --use-ai --max-pages-per-source 3 2>&1 | tee -a "$LOG"
 
-echo "========================================"
-echo "Selesai pada: $(date)"
-echo "========================================"
+echo "--- Scraper selesai: $(date) ---" >> "$LOG"
+
+# Auto-push ke Railway agar dashboard & Telegram agent terupdate
+git add output/latest/ cache/ 2>&1 >> "$LOG"
+git commit -m "auto: scraper run $(date +%Y-%m-%d_%H-%M)" 2>&1 >> "$LOG"
+git push origin main 2>&1 >> "$LOG"
+
+echo "========================================" >> "$LOG"
+echo "Selesai dan di-push pada: $(date)" >> "$LOG"
+echo "========================================" >> "$LOG"

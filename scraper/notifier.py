@@ -55,10 +55,29 @@ def notify_high_matches(ranked_jobs, run_id):
         company = job.get("company", "Perusahaan Tidak Diketahui")
         score = job.get("match_score", 0)
         url = job.get("job_url", "") or job.get("apply_url", "")
+        gpa_status = job.get("gpa_status", "")
+        deadline_status = job.get("deadline_status", "")
+        days_left = job.get("days_until_deadline", "")
+        
+        # GPA emoji
+        gpa_emoji = "✅" if gpa_status in ("Meets GPA", "Priority GPA Match", "No GPA Listed") else "⚠️" if "Slight" in gpa_status else "❌" if "High" in gpa_status else "📋"
+        
+        # Deadline text
+        dl_text = ""
+        if deadline_status == "Expired":
+            dl_text = "❌ Expired"
+        elif days_left and str(days_left).replace('.','').replace('-','').isdigit():
+            dl_text = f"⏰ {int(float(days_left))}d lagi"
+        elif deadline_status:
+            dl_text = f"📅 {deadline_status}"
         
         message += f"*{i}. {company}*\n"
         message += f"📌 {title}\n"
         message += f"⭐ Skor: {score}/100\n"
+        if gpa_status:
+            message += f"{gpa_emoji} GPA: {gpa_status}\n"
+        if dl_text:
+            message += f"{dl_text}\n"
         if url and url != "Tidak tercantum":
             message += f"🔗 [Link Lamaran]({url})\n"
         message += "\n"
