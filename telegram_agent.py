@@ -377,7 +377,7 @@ def main():
             check_deadlines()
             check_follow_up()
             check_weekly_stats()
-            check_auto_scraper()
+            # check_auto_scraper() # Disabled: running on-demand only per user request
             
         except requests.exceptions.RequestException:
             time.sleep(5)
