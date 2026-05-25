@@ -301,7 +301,7 @@ async def main_async():
 
 
     # 2. Run Scraping
-    scraper = UnifiedScraper(headless=False)
+    scraper = UnifiedScraper(headless=True)
     new_jobs = []
     
     if args.mode in ["discovery", "all"]:
