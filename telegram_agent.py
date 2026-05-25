@@ -79,13 +79,13 @@ def process_command(text, chat_id):
         send_message(chat_id, get_stats())
         
     elif cmd == '/run' or text == '🚀 Jalankan Scraper':
-        send_message(chat_id, "🚀 Menjalankan Scraper dengan mode Powerful & AI...\nMohon tunggu sekitar 2-3 menit.")
+        send_message(chat_id, "🚀 Menjalankan Scraper dengan mode Powerful...\nMohon tunggu sekitar 2-3 menit.")
         
         try:
             # Run scraper
             script_path = os.path.join(DIRECTORY, "scraper", "main.py")
             process = subprocess.run(
-                ["python3", script_path, "--powerful", "--use-ai"], 
+                ["python3", script_path, "--powerful"], 
                 capture_output=True, text=True, cwd=DIRECTORY
             )
             
