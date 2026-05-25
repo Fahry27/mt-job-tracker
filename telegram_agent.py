@@ -371,12 +371,12 @@ def main():
                             print(f"Received command: {text}")
                             process_command(text, chat_id)
             
-            # Check proactive tasks every polling cycle
-            check_reminders()
-            check_morning_brief()
-            check_deadlines()
-            check_follow_up()
-            check_weekly_stats()
+            # Check proactive tasks every polling cycle - ALL DISABLED (On-demand only)
+            # check_reminders()
+            # check_morning_brief()
+            # check_deadlines()
+            # check_follow_up()
+            # check_weekly_stats()
             # check_auto_scraper() # Disabled: running on-demand only per user request
             
         except requests.exceptions.RequestException:
