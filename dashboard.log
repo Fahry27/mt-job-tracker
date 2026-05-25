@@ -913,3 +913,92 @@ output/latest/jobs_ranked.csv
 output/latest/apply_today.csv
 Checking for Telegram notifications...
     * Notifikasi Telegram berhasil dikirim!
+/Users/fahry/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+============================================================
+  MT JOB SCRAPER & MATCHER v4.0 - Mode: ALL
+  Unified Mode: False
+  Run ID: 20260520_070001
+  Output Folder: output/2026-05-20_07-00-01
+============================================================
+
+>>> Discovering: Disnakerja - Management Trainee
+    -> Discovering links from Disnakerja - Management Trainee...
+      X Attempt 1 failed for https://www.disnakerja.com/kategori/management-trainee/: Page.goto: Target page, context or browser has been closed
+Call log:
+  - navigating to "https://www.disnakerja.com/kategori/management-trainee/", waiting until "domcontentloaded"
+
+      X Attempt 2 failed for https://www.disnakerja.com/kategori/management-trainee/: Page.goto: Target page, context or browser has been closed
+      X Attempt 3 failed for https://www.disnakerja.com/kategori/management-trainee/: Page.goto: Target page, context or browser has been closed
+>>> Discovering: Disnakerja - Management Trainee Page 2
+    -> Discovering links from Disnakerja - Management Trainee Page 2...
+      Page 1: +12 links (total 12)
+
+[DETAIL MODE] Scrapping details for 12 new links...
+      [1/12] Skipping (recently scraped): Tidak tercantum
+      [2/12] Skipping (recently scraped): Tidak tercantum
+      [3/12] Skipping (recently scraped): Tidak tercantum
+      [4/12] Skipping (recently scraped): Tidak tercantum
+      [5/12] Skipping (recently scraped): Tidak tercantum
+      [6/12] Skipping (recently scraped): Tidak tercantum
+      [7/12] Skipping (recently scraped): Tidak tercantum
+      [8/12] Skipping (recently scraped): Tidak tercantum
+      [9/12] Skipping (recently scraped): Tidak tercantum
+      [10/12] Skipping (recently scraped): Tidak tercantum
+      [11/12] Skipping (recently scraped): Tidak tercantum
+      [12/12] Skipping (recently scraped): Tidak tercantum
+Merged Total: 0
+Duplicates Removed: 0
+Unique Jobs to Rank: 0
+Re-scoring all combined jobs...
+Exporting results to output/2026-05-20_07-00-01...
+
+GPA-AWARE SCORING + FOLDERING UPDATE COMPLETE
+
+Run folder:
+/Users/fahry/Desktop/CLAUDE "MT" copy 2/output/2026-05-20_07-00-01
+
+Latest folder:
+output/latest
+
+Total links discovered:
+12
+
+Total detail pages attempted:
+12
+
+Total successful detail pages:
+0
+
+Duplicates removed:
+0
+
+Total exported:
+0
+
+Total apply today:
+0
+
+GPA meets:
+0
+
+Slight GPA gap:
+0
+
+Moderate GPA gap:
+0
+
+High GPA gap:
+0
+
+No GPA listed:
+0
+
+Qualitative GPA:
+0
+
+Open:
+output/latest/recommendation_summary.md
+output/latest/jobs_ranked.csv
+output/latest/apply_today.csv
+Checking for Telegram notifications...

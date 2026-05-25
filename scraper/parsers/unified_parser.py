@@ -313,17 +313,58 @@ class UnifiedScraper:
             scrape_status = "Success (JSON-LD)"
         else:
             job_title = soup.find("h1").get_text(strip=True) if soup.find("h1") else link_data.get("job_title", "Tidak tercantum")
+            
+            # === SMART COMPANY EXTRACTION ===
+            # Step 1: Try to extract from the job title itself (most reliable for curated boards)
+            # Patterns: "MT Lowongan @ PT Astra", "Management Trainee – Kawan Lama Group", "MT dari Toyota"
             company = "Tidak tercantum"
-            for p in [r"PT\s+[A-Z][a-z]+", r"Bank\s+[A-Z][a-z]+", r"Group\s+[A-Z][a-z]+"]:
-                match = re.search(p, text)
-                if match: company = match.group(0); break
+            title_text = job_title or link_data.get("job_title", "")
+            
+            title_company_patterns = [
+                r'@\s*(PT\s+\w[\w\s]+?)(?:\s*[-–(]|$)',        # "... @ PT Astra..."
+                r'[-–]\s*(PT\s+\w[\w\s]+?)(?:\s*[-–(]|$)',     # "... – PT Toyota..."
+                r'\bdi\s+(PT\s+\w[\w\s]+?)(?:\s*[-–(]|$)',      # "... di PT Kalbe..."
+                r'\bdari\s+(PT\s+\w[\w\s]+?)(?:\s*[-–(]|$)',    # "... dari PT Unilever..."
+                r'[-–]\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+Group)(?:\s*[-–(]|$)',  # "– Kawan Lama Group"
+                r'[-–]\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)(?:\s*[-–(]|$)',  # "– Dharma Polimetal"
+            ]
+            for pattern in title_company_patterns:
+                m = re.search(pattern, title_text, re.IGNORECASE)
+                if m:
+                    company = m.group(1).strip().rstrip('.,')
+                    break
+            
+            # Step 2: Search ONLY within the main content area, not sidebar/footer
+            if company == "Tidak tercantum":
+                content_area = (
+                    soup.find("article") or
+                    soup.find("main") or
+                    soup.find(class_=re.compile(r'entry-content|post-content|article-content|job-content|content-area', re.I)) or
+                    soup.find("div", id=re.compile(r'content|main|article', re.I))
+                )
+                if content_area:
+                    content_text = content_area.get_text(separator=" ", strip=True)
+                    # Look for company patterns in content area only (first 2000 chars = above fold)
+                    content_snippet = content_text[:2000]
+                    for p in [r"PT\s+[A-Z][a-zA-Z\s&]+?(?=\s+(?:adalah|merupakan|membuka|mencari|membutuhkan|Tbk|Indonesia)|[,.]|$)",
+                               r"Bank\s+[A-Z][a-zA-Z\s]+?(?=\s+(?:adalah|merupakan|membuka)|[,.]|$)"]:
+                        m = re.search(p, content_snippet)
+                        if m:
+                            candidate = m.group(0).strip().rstrip('.,')
+                            # Reject known false positives (sponsors, generic names)
+                            false_positives = {"PT Pamapersada", "PT Biro", "PT Karunia", "PT Berca"}
+                            if candidate not in false_positives:
+                                company = candidate
+                                break
+            
             location = "Tidak tercantum"
-            for city in ["jakarta", "surabaya", "bandung", "tangerang", "bekasi", "bogor", "depok"]:
+            for city in ["jakarta", "surabaya", "bandung", "tangerang", "bekasi", "bogor", "depok",
+                         "semarang", "medan", "makassar", "bali", "denpasar", "yogyakarta", "malang"]:
                 if city in text_lower: location = city.capitalize(); break
             date_posted = deadline = salary = responsibilities = "Tidak tercantum"
             description = text[:500] + "..."
             requirements = "Tidak tercantum"
-            req_section = soup.find(string=re.compile(r"Kualifikasi|Requirements|Persyaratan", re.I))
+            req_section = soup.find(string=re.compile(r"Kualifikasi|Requirements|Persyaratan|Requirement", re.I))
             if req_section and req_section.find_parent():
                 requirements = req_section.find_parent().get_text(strip=True)[:1000]
             scrape_status = "Success (HTML Fallback)"

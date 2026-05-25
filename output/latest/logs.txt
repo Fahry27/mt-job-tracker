@@ -1,35 +1,35 @@
-[2026-05-23 12:31:24] ============================================================
-[2026-05-23 12:31:24]   MT JOB SCRAPER & MATCHER v4.0 - Mode: POWERFUL_FULL_RUN
-[2026-05-23 12:31:24]   Unified Mode: False
-[2026-05-23 12:31:24]   Run ID: 20260523_123124
-[2026-05-23 12:31:24]   Output Folder: output/2026-05-23_12-31-24
-[2026-05-23 12:31:24] ============================================================
+[2026-05-24 13:02:15] ============================================================
+[2026-05-24 13:02:15]   MT JOB SCRAPER & MATCHER v4.0 - Mode: POWERFUL_FULL_RUN
+[2026-05-24 13:02:15]   Unified Mode: False
+[2026-05-24 13:02:15]   Run ID: 20260524_130215
+[2026-05-24 13:02:15]   Output Folder: output/2026-05-24_13-02-15
+[2026-05-24 13:02:15] ============================================================
 
-[2026-05-23 12:31:25] >>> Discovering: Disnakerja - Management Trainee
-[2026-05-23 12:31:34] >>> Discovering: Disnakerja - Management Trainee Page 2
-[2026-05-23 12:31:39] >>> Discovering: Disnakerja - MT Blog
-[2026-05-23 12:31:53] >>> Discovering: Disnakerja - Jobs
-[2026-05-23 12:32:06] >>> Discovering: LokerBumn - Management Trainee
-[2026-05-23 12:32:13] >>> Discovering: LokerBumn - Officer Development Program
-[2026-05-23 12:32:19] >>> Discovering: LokerBumn - Fresh Graduate
-[2026-05-23 12:32:25] >>> Discovering: Gokerja - Management Trainee
-[2026-05-23 12:32:34] >>> Discovering: Gokerja - Fresh Graduate
-[2026-05-23 12:32:40] >>> Discovering: Gokerja - Homepage
-[2026-05-23 12:32:46] >>> Discovering: Bukajobs - Management Trainee
-[2026-05-23 12:32:49] >>> Discovering: Bukajobs - Loker S1
-[2026-05-23 12:32:52] >>> Discovering: Prosple Indonesia
-[2026-05-23 12:32:55] >>> Discovering: Prosple Indonesia - Search Jobs
-[2026-05-23 12:32:58] >>> Discovering: JobStreet - Management Trainee
-[2026-05-23 12:33:01] >>> Discovering: JobStreet - Fresh Graduate Management Trainee
-[2026-05-23 12:33:04] >>> Discovering: Indeed Indonesia - Fresh Graduate MT
-[2026-05-23 12:33:04] >>> Discovering: Loker.id - Management Trainee
-[2026-05-23 12:33:07] >>> Discovering: Jooble Indonesia - Management Trainee
-[2026-05-23 12:33:11] 
-[DETAIL MODE] Scrapping details for 90 new links...
-[2026-05-23 12:35:09] Merged Total: 89
-[2026-05-23 12:35:09] Duplicates Removed: 13
-[2026-05-23 12:35:09] Unique Jobs to Rank: 76
-[2026-05-23 12:35:09] Re-scoring all combined jobs...
-[2026-05-23 12:35:09] Running AI Semantic Matching on top jobs (Score >= 60)...
-[2026-05-23 12:36:33] Running deadline audit on all jobs...
-[2026-05-23 12:36:33] Exporting results to output/2026-05-23_12-31-24...
+[2026-05-24 13:02:16] >>> Discovering: Disnakerja - Management Trainee
+[2026-05-24 13:02:38] >>> Discovering: Disnakerja - Management Trainee Page 2
+[2026-05-24 13:02:49] >>> Discovering: Disnakerja - MT Blog
+[2026-05-24 13:03:00] >>> Discovering: Disnakerja - Jobs
+[2026-05-24 13:03:14] >>> Discovering: LokerBumn - Management Trainee
+[2026-05-24 13:03:37] >>> Discovering: LokerBumn - Officer Development Program
+[2026-05-24 13:03:55] >>> Discovering: LokerBumn - Fresh Graduate
+[2026-05-24 13:04:15] >>> Discovering: Gokerja - Management Trainee
+[2026-05-24 13:04:36] >>> Discovering: Gokerja - Fresh Graduate
+[2026-05-24 13:04:57] >>> Discovering: Gokerja - Homepage
+[2026-05-24 13:05:17] >>> Discovering: Bukajobs - Management Trainee
+[2026-05-24 13:05:20] >>> Discovering: Bukajobs - Loker S1
+[2026-05-24 13:05:23] >>> Discovering: Prosple Indonesia
+[2026-05-24 13:05:26] >>> Discovering: Prosple Indonesia - Search Jobs
+[2026-05-24 13:05:29] >>> Discovering: JobStreet - Management Trainee
+[2026-05-24 13:05:32] >>> Discovering: JobStreet - Fresh Graduate Management Trainee
+[2026-05-24 13:05:35] >>> Discovering: Indeed Indonesia - Fresh Graduate MT
+[2026-05-24 13:05:35] >>> Discovering: Loker.id - Management Trainee
+[2026-05-24 13:05:38] >>> Discovering: Jooble Indonesia - Management Trainee
+[2026-05-24 13:05:42] 
+[DETAIL MODE] Scrapping details for 321 new links...
+[2026-05-24 13:12:35] Merged Total: 320
+[2026-05-24 13:12:35] Duplicates Removed: 89
+[2026-05-24 13:12:35] Unique Jobs to Rank: 231
+[2026-05-24 13:12:35] Re-scoring all combined jobs...
+[2026-05-24 13:12:36] Running AI Semantic Matching on top jobs (Score >= 60)...
+[2026-05-24 13:13:58] Running deadline audit on all jobs...
+[2026-05-24 13:13:58] Exporting results to output/2026-05-24_13-02-15...

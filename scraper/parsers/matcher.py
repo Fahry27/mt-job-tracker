@@ -16,17 +16,55 @@ def normalize_text(text):
     if not text: return ""
     return re.sub(r'[^a-z0-9]', '', text.lower())
 
+def _normalize_title_for_dedup(title):
+    """Normalize job title for fuzzy dedup: lowercase, remove stopwords, years, batch numbers."""
+    if not title: return ""
+    t = title.lower()
+    # Remove years (2024, 2025, 2026, etc.)
+    t = re.sub(r'\b20\d{2}\b', '', t)
+    # Remove batch numbers (batch 1, batch 33, batch xxii, etc.)
+    t = re.sub(r'\bbatch\s*\d+\b', '', t, flags=re.IGNORECASE)
+    t = re.sub(r'\bbatch\s*[ivxlcdm]+\b', '', t, flags=re.IGNORECASE)
+    # Remove common stopwords
+    stopwords = {'lowongan', 'kerja', 'rekrutmen', 'info', 'loker', 'program',
+                 'terbaru', 'new', 'periode', 'dan', 'the', 'for', 'in', 'at', 'of'}
+    words = [w for w in re.findall(r'[a-z]+', t) if w not in stopwords and len(w) > 2]
+    return ''.join(words)
+
 def deduplicate_jobs(jobs):
-    seen = set()
-    unique_jobs = []
+    """Two-pass deduplication: (1) exact URL, (2) fuzzy normalized title."""
+    # Pass 1: URL-based exact dedup
+    seen_urls = set()
+    url_unique = []
     for job in jobs:
-        key = normalize_text(job.get("job_title", "")) + \
-              normalize_text(job.get("company", "")) + \
-              job.get("job_url", "")
-        if key not in seen:
-            seen.add(key)
-            unique_jobs.append(job)
-    return unique_jobs
+        url = (job.get("job_url") or job.get("Link") or "").lower().strip()
+        if url and url != "tidak tercantum":
+            if url not in seen_urls:
+                seen_urls.add(url)
+                url_unique.append(job)
+        else:
+            url_unique.append(job)  # No URL, keep for title-based pass
+
+    # Pass 2: Fuzzy title + company dedup (catches cross-source duplicates)
+    seen_titles = {}
+    title_unique = []
+    for job in url_unique:
+        title_key = _normalize_title_for_dedup(job.get("job_title", ""))
+        if len(title_key) < 8:
+            # Too short to reliably dedup by title
+            title_unique.append(job)
+            continue
+        if title_key not in seen_titles:
+            seen_titles[title_key] = len(title_unique)
+            title_unique.append(job)
+        else:
+            # Keep the one with higher data_confidence
+            idx = seen_titles[title_key]
+            existing_conf = float(title_unique[idx].get("data_confidence", 0) or 0)
+            new_conf = float(job.get("data_confidence", 0) or 0)
+            if new_conf > existing_conf:
+                title_unique[idx] = job
+    return title_unique
 
 def calculate_score(job):
     score = 0

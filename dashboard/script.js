@@ -1073,6 +1073,89 @@ window.generateOrLoadCoverLetter = function(job, lang, tone) {
     });
 };
 
+// ===================== NOTES MODAL =====================
+window.openNotesModal = function(jobId, company, title) {
+    // Remove existing notes modal if any
+    const existing = document.getElementById('notes-modal-overlay');
+    if (existing) existing.remove();
+
+    const currentNote = serverState.notes?.[jobId] || '';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'notes-modal-overlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9000;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px); animation: fadeIn 0.2s ease;
+    `;
+
+    overlay.innerHTML = `
+        <div style="background: var(--store-surface, #1e1e2e); border-radius: 20px; padding: 28px 32px;
+                    width: 100%; max-width: 480px; box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+                    border: 1px solid rgba(255,255,255,0.08); animation: slideUp 0.25s ease;">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <div style="font-size:11px; color: var(--store-text-muted, #888); text-transform: uppercase; letter-spacing: 1px;">Catatan Lamaran</div>
+                    <div style="font-weight: 700; font-size: 16px; margin-top: 4px;">${company}</div>
+                    <div style="font-size: 13px; color: var(--store-text-muted, #888);">${title}</div>
+                </div>
+                <button id="notes-close-btn" style="background:none; border:none; cursor:pointer; color:var(--store-text-muted); font-size: 22px; line-height:1;">✕</button>
+            </div>
+            <textarea id="notes-textarea" placeholder="Tulis catatan di sini...&#10;Contoh: Sudah kirim CV 25 Mei, menunggu balasan HR."
+                style="width: 100%; height: 140px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                       border-radius: 12px; padding: 14px; color: var(--store-text, #fff); font-size: 14px;
+                       line-height: 1.6; resize: none; outline: none; box-sizing: border-box; font-family: inherit;"
+            >${currentNote}</textarea>
+            <div style="display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;">
+                <button id="notes-clear-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+                        color: var(--store-text-muted); border-radius: 10px; padding: 10px 18px; cursor: pointer; font-size: 13px;">
+                    🗑 Hapus
+                </button>
+                <button id="notes-save-btn" style="background: var(--store-accent, #7c3aed); border: none;
+                        color: #fff; border-radius: 10px; padding: 10px 24px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                    💾 Simpan
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const textarea = overlay.querySelector('#notes-textarea');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    const saveNote = async () => {
+        const noteText = textarea.value.trim();
+        try {
+            await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ job_id: jobId, note: noteText })
+            });
+            // Update local state
+            if (!serverState.notes) serverState.notes = {};
+            if (noteText) {
+                serverState.notes[jobId] = noteText;
+            } else {
+                delete serverState.notes[jobId];
+            }
+            showToast('📌 Catatan disimpan!');
+            overlay.remove();
+            renderKanban(); // Refresh to show note preview
+        } catch(e) {
+            showToast('❌ Gagal menyimpan catatan');
+        }
+    };
+
+    overlay.querySelector('#notes-save-btn').addEventListener('click', saveNote);
+    overlay.querySelector('#notes-clear-btn').addEventListener('click', () => {
+        textarea.value = '';
+    });
+    overlay.querySelector('#notes-close-btn').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+};
+
 window.openCoverLetterModal = function(jobId) {
     const job = allJobs.find(j => j._id === jobId);
     if (!job) return;
@@ -1496,16 +1579,20 @@ function buildCard(job, displayRank, isKanban) {
 
     } else {
         // Kanban Card Layout
+        const existingNote = serverState.notes?.[id] || '';
+        const notePreview = existingNote ? `<div class="k-note-preview">📌 ${existingNote.slice(0, 60)}${existingNote.length > 60 ? '...' : ''}</div>` : '';
         card.innerHTML = `
             <button class="remove-btn material-icons-round" data-id="${id}">close</button>
             <div class="k-company">${companyName}</div>
             <div class="k-title"><a href="${job.URL || '#'}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onclick="event.stopPropagation()">${job['Job Title'] || '—'}</a></div>
             ${countdownHtml}
+            ${notePreview}
             ${researchHtml}
             <div class="k-actions">
                 <button class="k-action-btn" style="color:var(--store-blue);" onclick="openCoverLetterModal('${id}')">📝 Cover</button>
                 <button class="k-action-btn" style="color:var(--store-orange);" onclick="openInterviewPrepModal('${id}')">🎤 Prep</button>
                 <button class="k-action-btn" style="color:var(--store-green);" onclick="openResumePrepModal('${id}')">📄 CV</button>
+                <button class="k-action-btn k-note-btn" style="color:var(--store-text-muted);" data-id="${id}">📌 Catatan</button>
             </div>
         `;
 
@@ -1515,6 +1602,12 @@ function buildCard(job, displayRank, isKanban) {
             card.remove();
             renderKanban();
             updateAppliedBadge();
+        });
+
+        // Notes button handler
+        card.querySelector('.k-note-btn').addEventListener('click', e => {
+            e.stopPropagation();
+            openNotesModal(id, job.Company || '?', job['Job Title'] || '?');
         });
     }
 

@@ -130,12 +130,14 @@ def get_historical_jobs(kanban_keys):
 
 def get_state():
     if not os.path.exists(STATE_FILE):
-        return {"kanban": {}, "hidden": {}, "apply_dates": {}, "historical_jobs": {}}
+        return {"kanban": {}, "hidden": {}, "apply_dates": {}, "historical_jobs": {}, "notes": {}}
     try:
         with open(STATE_FILE, "r") as f:
             data = json.load(f)
             if "apply_dates" not in data:
                 data["apply_dates"] = {}
+            if "notes" not in data:
+                data["notes"] = {}
             
             existing_historical = data.get("historical_jobs", {})
             kanban_keys = list(data.get("kanban", {}).keys())
@@ -151,7 +153,7 @@ def get_state():
             data["historical_jobs"] = fresh_historical
             return data
     except Exception as e:
-        return {"kanban": {}, "hidden": {}, "apply_dates": {}, "historical_jobs": {}}
+        return {"kanban": {}, "hidden": {}, "apply_dates": {}, "historical_jobs": {}, "notes": {}}
 
 def save_state(data):
     with open(STATE_FILE, "w") as f:
@@ -222,6 +224,31 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
                 
+        elif self.path == '/api/notes':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                note_data = json.loads(post_data.decode('utf-8'))
+                job_id = note_data.get('job_id')
+                note_text = note_data.get('note', '')
+                if job_id:
+                    state = get_state()
+                    if "notes" not in state:
+                        state["notes"] = {}
+                    if note_text.strip():
+                        state["notes"][job_id] = note_text.strip()
+                    else:
+                        state["notes"].pop(job_id, None)  # Remove empty notes
+                    save_state(state)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(b'{"success": true}')
+            except Exception as e:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode('utf-8'))
+
         elif self.path == '/api/generate-cover':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)

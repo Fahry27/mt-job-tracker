@@ -4,6 +4,8 @@ from scraper.parsers.sites.jobstreet_parser import JobStreetParser
 from scraper.parsers.sites.indeed_parser import IndeedParser
 from scraper.parsers.sites.loker_id_parser import LokerIdParser
 from scraper.parsers.sites.jooble_parser import JoobleParser
+from scraper.parsers.sites.glints_parser import GlintsParser
+from scraper.parsers.sites.kalibrr_parser import KalibrrParser
 
 class ParserFactory:
     @staticmethod
@@ -20,9 +22,17 @@ class ParserFactory:
                 return JobStreetParser()
             elif "indeed" in url:
                 return IndeedParser()
+            elif "glints" in url:
+                return GlintsParser()
+            elif "kalibrr" in url:
+                return KalibrrParser()
         elif source_type == "job_board":
             return LokerIdParser()
         elif source_type == "aggregator":
             return JoobleParser()
+        elif source_type == "glints":
+            return GlintsParser()
+        elif source_type == "kalibrr":
+            return KalibrrParser()
         
         return None

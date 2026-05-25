@@ -1,1 +1,2 @@
 /bin/bash: /Users/fahry/Desktop/CLAUDE "MT" copy 2/auto_run.sh: Operation not permitted
+/bin/bash: /Users/fahry/Desktop/CLAUDE "MT" copy 2/auto_run.sh: Operation not permitted
